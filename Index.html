@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMU Learning Health System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .risk-badge-high { background-color: #fee2e2; color: #991b1b; }
+        .risk-badge-med { background-color: #fef3c7; color: #92400e; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+
+    <!-- Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 p-1.5 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">CMU Learning Health <span class="text-blue-600">System</span> <span id="appVersionBadge" class="ml-2 text-[10px] font-bold text-slate-400 align-middle">v7</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="hidden md:block text-sm text-slate-500 font-medium">Chiang Mai Health District 1</span>
+                <div class="h-8 w-8 rounded-full bg-slate-200 border border-slate-300"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <section aria-label="Environment and Trends" class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">1</span>
+                Environmental Overview & Timeline
+            </h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
+                
+                <!-- Controls Row: Cascading Location + Time Range -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="w-full">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Province</label>
+                            <select id="provinceSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
+                                <option value="all" selected>ทุกจังหวัด</option>
+                            </select>
+                        </div>
+
+                        <div class="w-full">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Amphoe / District</label>
+                            <select id="amphoeSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
+                                <option value="all" selected>ทุกอำเภอ</option>
+                            </select>
+                        </div>
+
+                        <div class="w-full">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Tambon / Subdistrict</label>
+                            <select id="tambonSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
+                                <option value="all" selected>ทุกตำบล</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-4 items-end">
+                        <div class="w-full lg:w-auto">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Time Range</label>
+                            <div class="flex items-center gap-2">
+                                <input id="startDateInput" type="date" class="border border-slate-200 rounded-lg px-3 h-10 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer" value="2026-05-01">
+                                <span class="text-slate-400 text-sm font-medium">to</span>
+                                <input id="endDateInput" type="date" class="border border-slate-200 rounded-lg px-3 h-10 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer" value="2026-05-07">
+                            </div>
+                        </div>
+
+                        <div class="flex-1 w-full">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Current Selection</label>
+                            <div id="locationSelectionText" class="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 flex items-center">
+                                ทุกจังหวัด / ทุกอำเภอ / ทุกตำบล
+                            </div>
+                        </div>
+
+                        <button id="updateDashboardBtn" class="bg-blue-600 text-white font-bold h-10 px-6 rounded-lg hover:bg-blue-700 transition shadow-sm w-full lg:w-auto flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Update
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PM & Temp Trends Chart -->
+                <div class="flex flex-col">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">PM2.5 Exposure & Temperature Trends</h3>
+                            <p class="text-xs text-slate-500 italic" id="chartSubtitle">Reading concentration hourly average (µg/m³) and Temperature (°C)</p>
+                        </div>
+                        <div class="flex flex-col md:flex-row items-end md:items-center gap-3">
+                            <!-- View Toggle -->
+                            <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                <button id="btnDaily" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition">Daily Trend</button>
+                                <button id="btnWeekly" class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition">Weekly Trend</button>
+                            </div>
+                            <!-- Alerts -->
+                            <div class="flex gap-2">
+                                <div class="text-[10px] font-bold text-orange-600 flex items-center gap-1 bg-orange-50 border border-orange-200 px-2 py-1.5 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                    38°C HEAT
+                                </div>
+                                <div class="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1.5 rounded-lg">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    PM2.5 PEAK
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container w-full h-[300px]">
+                        <canvas id="pmTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section aria-label="Vulnerability Parameters" class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">2</span>
+                Vulnerability Parameters
+            </h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Demographics -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            Demographic Factors
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_age_over_65" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Age &gt; 65
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_age_under_5" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Age &lt; 5
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_pregnant" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Pregnant
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_bedridden" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Bedridden / Immobile
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_outdoor_worker" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Outdoor Workers
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Underlying Diseases -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                            Underlying Conditions
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_copd" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> COPD
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_asthma" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Asthma
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_cardiovascular_disease" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Cardiovascular Disease
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_diabetes" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Diabetes
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_lung_cancer" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Lung Cancer
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                <input id="filter_post_covid" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Post-Covid Complications
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="flex justify-end pt-2 border-t border-slate-100">
+                    <button id="findPatientsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Find Target Patients
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section aria-label="Alerts and Outreach" class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
+                Area Alerts & Patient Outreach
+                <div class="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-200 shadow-sm ml-2">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    <span id="identifiedPatientsBadge" class="text-xs font-bold uppercase tracking-wider">12 Patients Identified</span>
+                </div>
+            </h2>
+            
+            <div class="flex flex-col gap-6">
+                <!-- Activity Alerts Cards: 2 Sets -->
+                <div class="space-y-5 border border-slate-200 p-5 rounded-2xl bg-white shadow-sm">
+                    
+                    <!-- Set 1: Environmental Peaks -->
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+                            Environmental Peaks <span class="text-[10px] text-slate-400 normal-case font-normal">(Highest in selected time range)</span>
+                        </h3>
+                        <div id="environmentPeakCards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Chang Phueak -->
+                            <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
+                                <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
+                                    <span class="text-sm font-bold text-slate-800">ช้างเผือก (Chang Phueak)</span>
+                                </div>
+                                <div class="flex justify-between items-end">
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
+                                        <div class="flex items-baseline gap-0.5">
+                                            <span class="text-2xl font-black text-red-600 leading-none">161</span>
+                                            <span class="text-[9px] font-bold text-red-500">µg/m³</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col text-right">
+                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
+                                        <div class="flex items-baseline justify-end gap-1">
+                                            <span class="text-sm font-bold text-blue-500">24°</span>
+                                            <span class="text-[10px] text-slate-400">-</span>
+                                            <span class="text-lg font-black text-orange-600 leading-none">39°C</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Suthep -->
+                            <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
+                                <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
+                                    <span class="text-sm font-bold text-slate-800">สุเทพ (Suthep)</span>
+                                </div>
+                                <div class="flex justify-between items-end">
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
+                                        <div class="flex items-baseline gap-0.5">
+                                            <span class="text-2xl font-black text-red-600 leading-none">152</span>
+                                            <span class="text-[9px] font-bold text-red-500">µg/m³</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col text-right">
+                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
+                                        <div class="flex items-baseline justify-end gap-1">
+                                            <span class="text-sm font-bold text-blue-500">23°</span>
+                                            <span class="text-[10px] text-slate-400">-</span>
+                                            <span class="text-lg font-black text-orange-600 leading-none">38°C</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Sri Wichai -->
+                            <div class="p-3.5 bg-orange-50 border border-orange-200 rounded-xl shadow-sm flex flex-col gap-3">
+                                <div class="flex justify-between items-start border-b border-orange-200/50 pb-2">
+                                    <span class="text-sm font-bold text-slate-800">ศรีวิชัย (Sri Wichai)</span>
+                                </div>
+                                <div class="flex justify-between items-end">
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
+                                        <div class="flex items-baseline gap-0.5">
+                                            <span class="text-2xl font-black text-orange-600 leading-none">84</span>
+                                            <span class="text-[9px] font-bold text-orange-500">µg/m³</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col text-right">
+                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
+                                        <div class="flex items-baseline justify-end gap-1">
+                                            <span class="text-sm font-bold text-blue-500">22°</span>
+                                            <span class="text-[10px] text-slate-400">-</span>
+                                            <span class="text-lg font-black text-orange-600 leading-none">36°C</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Set 2: Patient Counts -->
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3 mt-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            Vulnerable Patient Alerts <span class="text-[10px] text-slate-400 normal-case font-normal">(Top 3 tambons matching any selected filter)</span>
+                        </h3>
+                        <div id="vulnerablePatientCards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                                <span class="text-sm font-bold text-slate-700">ช้างเผือก (Chang Phueak)</span>
+                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
+                                    <span class="text-lg font-black text-blue-600">5</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                                <span class="text-sm font-bold text-slate-700">สุเทพ (Suthep)</span>
+                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
+                                    <span class="text-lg font-black text-blue-600">6</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                                <span class="text-sm font-bold text-slate-700">ศรีวิชัย (Sri Wichai)</span>
+                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
+                                    <span class="text-lg font-black text-blue-600">1</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patient</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Target Patient List -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Targeted Vulnerable Patients</h3>
+                            <p class="text-xs text-slate-500">Filtered list based on Step 1 (Locations) and Step 2 (Vulnerabilities)</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export for VHV
+                            </button>
+                            <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Broadcast SMS
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">Patient Name</th>
+                                    <th class="px-6 py-4">Tambon</th>
+                                    <th class="px-6 py-4">Clinical Vulnerability</th>
+                                    <th class="px-6 py-4">Environmental Risk Level</th>
+                                    <th class="px-6 py-4">Last Contact</th>
+                                    <th class="px-6 py-4 text-center">Intervention</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientTableBody" class="divide-y divide-slate-50 text-sm">
+</tbody>
+                        </table>
+                    </div>
+                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400 font-medium">
+                        <span>Showing 4 targeted patients in 3 critical Tambons</span>
+                        <div class="flex gap-4">
+                            <a href="#" class="hover:text-blue-600">Previous</a>
+                            <a href="#" class="text-blue-600 font-bold">1</a>
+                            <a href="#" class="hover:text-blue-600">Next</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- AI SMS Generator Modal -->
+        <div id="aiSmsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col">
+                <div class="bg-purple-600 p-4 flex items-center justify-between">
+                    <h3 class="text-white font-bold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                        AI SMS Drafter
+                    </h3>
+                    <button onclick="closeAISMSModal()" class="text-purple-200 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div class="p-6 flex flex-col gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 tracking-wider">Recipient</label>
+                        <div id="aiSmsRecipient" class="text-sm font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200">Patient Name</div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Message Draft</label>
+                            <span id="aiSmsStatus" class="text-xs font-bold text-purple-600 animate-pulse hidden flex items-center gap-1">
+                                <svg id="statusSpinner" class="animate-spin h-3 w-3 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span id="statusTextContent">Drafting...</span>
+                            </span>
+                        </div>
+                        <textarea id="aiSmsTextarea" rows="4" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition disabled:bg-slate-50 disabled:text-slate-500" placeholder="AI will generate the message here..."></textarea>
+                        <p class="text-[10px] text-slate-400 mt-2">AI-generated content. Please review before sending.</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                    <button onclick="closeAISMSModal()" class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition">Cancel</button>
+                    <button id="aiSmsSendBtn" onclick="sendAISMS()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition flex items-center gap-2 shadow-sm">
+                        <svg id="sendIconDefault" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                        <svg id="sendIconSuccess" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        <span id="sendBtnText">Send SMS</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        
+        async function generateAISMS(patientName, location, vulnerability, pmLevel) {
+            const modal = document.getElementById('aiSmsModal');
+            const textArea = document.getElementById('aiSmsTextarea');
+            const sendBtn = document.getElementById('aiSmsSendBtn');
+            const statusContainer = document.getElementById('aiSmsStatus');
+            const statusSpinner = document.getElementById('statusSpinner');
+            const statusTextContent = document.getElementById('statusTextContent');
+            const recipientName = document.getElementById('aiSmsRecipient');
+
+            // Reset and Show Modal
+            recipientName.innerText = patientName;
+            textArea.value = '';
+            
+            statusSpinner.classList.remove('hidden');
+            statusTextContent.innerText = 'Drafting...';
+            statusContainer.classList.remove('hidden', 'text-red-500');
+            statusContainer.classList.add('text-purple-600');
+            
+            textArea.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            modal.classList.remove('hidden');
+
+            const systemPrompt = "You are an empathetic, professional public health assistant working in Chiang Mai, Thailand. Your task is to draft short SMS text messages directly to vulnerable patients during air pollution crises.";
+            const userQuery = `Write a short SMS text message (maximum 2 sentences) in natural Thai language directed to a patient named ${patientName}. They live in ${location} where the PM2.5 level is currently ${pmLevel} µg/m³ (Unhealthy). They are vulnerable because of: ${vulnerability}. Advise them to stay indoors, avoid outdoor exercise, and keep their medications nearby. Keep it very polite, caring, actionable, and concise.`;
+
+            const apiKey = ""; // API key will be injected automatically
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates && result.candidates[0];
+
+                if (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) {
+                    textArea.value = candidate.content.parts[0].text.replace(/"/g, '').trim();
+                    statusContainer.classList.add('hidden');
+                    textArea.disabled = false;
+                    sendBtn.disabled = false;
+                    sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    throw new Error("Invalid response format");
+                }
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                statusSpinner.classList.add('hidden');
+                statusTextContent.innerText = '⚠️ Error connecting to AI.';
+                statusContainer.classList.replace('text-purple-600', 'text-red-500');
+                statusContainer.classList.remove('animate-pulse');
+                textArea.disabled = false;
+            }
+        }
+
+        function closeAISMSModal() {
+            document.getElementById('aiSmsModal').classList.add('hidden');
+        }
+
+        function sendAISMS() {
+            const btn = document.getElementById('aiSmsSendBtn');
+            const iconDefault = document.getElementById('sendIconDefault');
+            const iconSuccess = document.getElementById('sendIconSuccess');
+            const btnText = document.getElementById('sendBtnText');
+            
+            // Visual feedback for sending
+            iconDefault.classList.add('hidden');
+            iconSuccess.classList.remove('hidden');
+            btnText.innerText = 'Sent successfully!';
+            
+            btn.classList.replace('bg-blue-600', 'bg-green-600');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+            
+            setTimeout(() => {
+                closeAISMSModal();
+                setTimeout(() => {
+                    // Reset button state
+                    iconSuccess.classList.add('hidden');
+                    iconDefault.classList.remove('hidden');
+                    btnText.innerText = 'Send SMS';
+                    
+                    btn.classList.replace('bg-green-600', 'bg-blue-600');
+                    btn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                }, 300);
+            }, 1200);
+        }
+    </script>
+
+    <script>
+        const APP_VERSION = "v7-or-filter-2026-05-19";
+        const API_BASE = window.location.protocol.startsWith("http") ? window.location.origin : "http://127.0.0.1:8000";
+        console.log("CMU LHS UI", APP_VERSION, "API_BASE=", API_BASE);
+
+        let pmTrendChart = null;
+        let currentTrendMode = "daily";
+
+        function textValue(value, fallback = "-") {
+            if (value === null || value === undefined || value === "") return fallback;
+            return String(value);
+        }
+
+        function escapeHtml(value) {
+            return textValue(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function toBool(value) {
+            if (value === true || value === 1) return true;
+            if (typeof value === "number") return value === 1;
+            return ["true", "1", "yes", "y", "ใช่"].includes(String(value || "").trim().toLowerCase());
+        }
+
+        async function fetchJson(url) {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return await response.json();
+        }
+
+        function getDateRange() {
+            return {
+                startDate: document.getElementById("startDateInput")?.value || "",
+                endDate: document.getElementById("endDateInput")?.value || "",
+            };
+        }
+
+        function filterByDateRange(rows, dateColumn = "date") {
+            const { startDate, endDate } = getDateRange();
+
+            return rows.filter(row => {
+                const rowDate = String(row[dateColumn] || "").slice(0, 10);
+                if (!rowDate) return false;
+                if (startDate && rowDate < startDate) return false;
+                if (endDate && rowDate > endDate) return false;
+                return true;
+            });
+        }
+
+        function setTrendButtonState(mode) {
+            const btnDaily = document.getElementById("btnDaily");
+            const btnWeekly = document.getElementById("btnWeekly");
+
+            if (!btnDaily || !btnWeekly) return;
+
+            if (mode === "daily") {
+                btnDaily.className = "px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
+                btnWeekly.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition";
+            } else {
+                btnWeekly.className = "px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
+                btnDaily.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition";
+            }
+        }
+
+        function getWeekKey(dateString) {
+            const date = new Date(`${dateString}T00:00:00`);
+            if (Number.isNaN(date.getTime())) return "Unknown";
+
+            const firstDay = new Date(date.getFullYear(), 0, 1);
+            const pastDays = Math.floor((date - firstDay) / 86400000);
+            const weekNumber = Math.ceil((pastDays + firstDay.getDay() + 1) / 7);
+            return `${date.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
+        }
+
+        function aggregateWeekly(rows) {
+            const grouped = {};
+
+            rows.forEach(row => {
+                const key = getWeekKey(row.date);
+                if (!grouped[key]) {
+                    grouped[key] = { pm25: 0, temp: 0, count: 0 };
+                }
+                grouped[key].pm25 += Number(row.pm25_avg || 0);
+                grouped[key].temp += Number(row.temperature_avg || 0);
+                grouped[key].count += 1;
+            });
+
+            return Object.keys(grouped).sort().map(key => ({
+                date: key,
+                pm25_avg: grouped[key].count ? grouped[key].pm25 / grouped[key].count : 0,
+                temperature_avg: grouped[key].count ? grouped[key].temp / grouped[key].count : 0,
+            }));
+        }
+
+        function renderTrendChart(labels, pm25, temp) {
+            const canvas = document.getElementById("pmTrendChart");
+            if (!canvas) return;
+
+            if (pmTrendChart) {
+                pmTrendChart.destroy();
+            }
+
+            pmTrendChart = new Chart(canvas.getContext("2d"), {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: "PM2.5 (µg/m³)",
+                            data: pm25,
+                            borderColor: "#ef4444",
+                            backgroundColor: "rgba(239, 68, 68, 0.1)",
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: "y",
+                            pointRadius: context => Number(context.raw) >= 150 ? 7 : 3,
+                            pointBackgroundColor: context => Number(context.raw) >= 150 ? "#b91c1c" : "#ef4444",
+                            pointBorderColor: context => Number(context.raw) >= 150 ? "#fee2e2" : "#ffffff",
+                            pointBorderWidth: context => Number(context.raw) >= 150 ? 3 : 1,
+                        },
+                        {
+                            label: "Temperature (°C)",
+                            data: temp,
+                            borderColor: "#f59e0b",
+                            backgroundColor: "#f59e0b",
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: "y1",
+                            pointRadius: context => Number(context.raw) >= 38 ? 7 : 3,
+                            pointBackgroundColor: context => Number(context.raw) >= 38 ? "#c2410c" : "#f59e0b",
+                            pointBorderColor: context => Number(context.raw) >= 38 ? "#ffedd5" : "#ffffff",
+                            pointBorderWidth: context => Number(context.raw) >= 38 ? 3 : 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: { usePointStyle: true, boxWidth: 6 },
+                        },
+                    },
+                    scales: {
+                        y: {
+                            type: "linear",
+                            display: true,
+                            position: "left",
+                            title: { display: true, text: "PM2.5 (µg/m³)" },
+                            grid: { color: "#f1f5f9" },
+                        },
+                        y1: {
+                            type: "linear",
+                            display: true,
+                            position: "right",
+                            title: { display: true, text: "Temp (°C)" },
+                            grid: { drawOnChartArea: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        function getSelectedLocation() {
+            const provinceSelect = document.getElementById("provinceSelect");
+            const amphoeSelect = document.getElementById("amphoeSelect");
+            const tambonSelect = document.getElementById("tambonSelect");
+
+            return {
+                province: provinceSelect?.value || "all",
+                amphoe: amphoeSelect?.value || "all",
+                tambon: tambonSelect?.value || "all",
+                provinceText: provinceSelect?.selectedOptions?.[0]?.textContent || "ทุกจังหวัด",
+                amphoeText: amphoeSelect?.selectedOptions?.[0]?.textContent || "ทุกอำเภอ",
+                tambonText: tambonSelect?.selectedOptions?.[0]?.textContent || "ทุกตำบล",
+            };
+        }
+
+        function appendLocationParams(url) {
+            const selected = getSelectedLocation();
+
+            if (selected.province && selected.province !== "all") {
+                url += `&province=${encodeURIComponent(selected.province)}`;
+            }
+
+            if (selected.amphoe && selected.amphoe !== "all") {
+                url += `&amphoe=${encodeURIComponent(selected.amphoe)}`;
+            }
+
+            if (selected.tambon && selected.tambon !== "all") {
+                url += `&tambon=${encodeURIComponent(selected.tambon)}`;
+            }
+
+            return url;
+        }
+
+        function updateLocationSelectionText() {
+            const selected = getSelectedLocation();
+            const box = document.getElementById("locationSelectionText");
+
+            if (!box) return;
+
+            box.textContent = `${selected.provinceText} / ${selected.amphoeText} / ${selected.tambonText}`;
+        }
+
+        function setSelectLoading(selectElement, text) {
+            if (!selectElement) return;
+            selectElement.innerHTML = `<option value="all">${text}</option>`;
+        }
+
+        async function fillSelectFromApi(selectId, url, responseKey, defaultText) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            setSelectLoading(select, "กำลังโหลด...");
+
+            try {
+                const data = await fetchJson(url);
+                const items = data[responseKey] || [];
+
+                select.innerHTML = `<option value="all" selected>${defaultText}</option>`;
+
+                items.forEach(item => {
+                    const option = document.createElement("option");
+                    option.value = item;
+                    option.textContent = item;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error(`Load ${selectId} error:`, error);
+                select.innerHTML = `<option value="all" selected>${defaultText}</option>`;
+            }
+        }
+
+        async function loadProvinces() {
+            await fillSelectFromApi(
+                "provinceSelect",
+                `${API_BASE}/provinces`,
+                "provinces",
+                "ทุกจังหวัด"
+            );
+
+            await loadAmphoes();
+            await loadTambons();
+            updateLocationSelectionText();
+        }
+
+        async function loadAmphoes() {
+            const selected = getSelectedLocation();
+            const params = new URLSearchParams();
+
+            if (selected.province && selected.province !== "all") {
+                params.set("province", selected.province);
+            }
+
+            await fillSelectFromApi(
+                "amphoeSelect",
+                `${API_BASE}/amphoes?${params.toString()}`,
+                "amphoes",
+                "ทุกอำเภอ"
+            );
+
+            const tambonSelect = document.getElementById("tambonSelect");
+            if (tambonSelect) {
+                tambonSelect.innerHTML = `<option value="all" selected>ทุกตำบล</option>`;
+            }
+
+            updateLocationSelectionText();
+        }
+
+        async function loadTambons() {
+            const selected = getSelectedLocation();
+            const params = new URLSearchParams();
+
+            if (selected.province && selected.province !== "all") {
+                params.set("province", selected.province);
+            }
+
+            if (selected.amphoe && selected.amphoe !== "all") {
+                params.set("amphoe", selected.amphoe);
+            }
+
+            await fillSelectFromApi(
+                "tambonSelect",
+                `${API_BASE}/tambons?${params.toString()}`,
+                "tambons",
+                "ทุกตำบล"
+            );
+
+            updateLocationSelectionText();
+        }
+
+        function buildTrendUrl() {
+            const { startDate, endDate } = getDateRange();
+
+            let url = `${API_BASE}/trend/pm25?mode=daily`;
+
+            if (startDate) {
+                url += `&start_date=${encodeURIComponent(startDate)}`;
+            }
+
+            if (endDate) {
+                url += `&end_date=${encodeURIComponent(endDate)}`;
+            }
+
+            url = appendLocationParams(url);
+            return url;
+        }
+
+        async function loadTrendChart() {
+            const subtitle = document.getElementById("chartSubtitle");
+
+            try {
+                let rows = await fetchJson(buildTrendUrl());
+                rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+                if (currentTrendMode === "weekly") {
+                    rows = aggregateWeekly(rows);
+                    if (subtitle) subtitle.innerText = "Reading concentration weekly average (µg/m³) and Temperature (°C)";
+                } else {
+                    if (subtitle) subtitle.innerText = "Reading concentration daily average (µg/m³) and Temperature (°C)";
+                }
+
+                if (!rows.length) {
+                    renderTrendChart([], [], []);
+                    if (subtitle) subtitle.innerText = "ไม่พบข้อมูลในช่วงวันที่/พื้นที่ที่เลือก ลองเลือกพื้นที่หรือวันที่ใหม่";
+                    return;
+                }
+
+                const labels = rows.map(row => String(row.date));
+                const pm25 = rows.map(row => Number(Number(row.pm25_avg || 0).toFixed(2)));
+                const temp = rows.map(row => Number(Number(row.temperature_avg || 0).toFixed(2)));
+
+                renderTrendChart(labels, pm25, temp);
+            } catch (error) {
+                console.error("Load trend chart error:", error);
+                if (subtitle) subtitle.innerText = `โหลดข้อมูลกราฟไม่สำเร็จ: ${error.message}`;
+            }
+        }
+
+        async function loadDashboardSummary() {
+            try {
+                const summary = await fetchJson(`${API_BASE}/dashboard/summary`);
+                updatePatientCountText(summary.critical_risk_count || 0, "Critical Patients");
+            } catch (error) {
+                console.error("Load summary error:", error);
+            }
+        }
+
+        function buildPatientsUrl(limit = 200) {
+            let url = `${API_BASE}/patients?limit=${limit}`;
+            url = appendLocationParams(url);
+
+            // Do not send vulnerability checkbox filters to FastAPI here.
+            // FastAPI query parameters are interpreted like AND.
+            // For this public-health dashboard, selected vulnerabilities should work as OR,
+            // so we fetch patients by location first and apply OR filtering in the browser.
+            return url;
+        }
+
+        async function fetchPatients(limit = 200) {
+            return await fetchJson(buildPatientsUrl(limit));
+        }
+
+        function getSelectedVulnerabilityFilters() {
+            return {
+                ageOver65: document.getElementById("filter_age_over_65")?.checked || false,
+                ageUnder5: document.getElementById("filter_age_under_5")?.checked || false,
+                pregnant: document.getElementById("filter_pregnant")?.checked || false,
+                bedridden: document.getElementById("filter_bedridden")?.checked || false,
+                outdoorWorker: document.getElementById("filter_outdoor_worker")?.checked || false,
+                copd: document.getElementById("filter_copd")?.checked || false,
+                asthma: document.getElementById("filter_asthma")?.checked || false,
+                cardiovascularDisease: document.getElementById("filter_cardiovascular_disease")?.checked || false,
+                diabetes: document.getElementById("filter_diabetes")?.checked || false,
+                ckd: document.getElementById("filter_ckd")?.checked || false,
+                hypertension: document.getElementById("filter_hypertension")?.checked || false,
+                lungCancer: document.getElementById("filter_lung_cancer")?.checked || false,
+                postCovid: document.getElementById("filter_post_covid")?.checked || false,
+            };
+        }
+
+        function getMatchedVulnerabilityItems(patient, selected = null) {
+            const allChecks = [
+                { key: "ageOver65", label: `Age ${patient.age || "65+"}`, matched: toBool(patient.age_over_65) || Number(patient.age) >= 65 },
+                { key: "ageUnder5", label: `Age ${patient.age || "<5"}`, matched: toBool(patient.age_under_5) || Number(patient.age) < 5 },
+                { key: "pregnant", label: "Pregnant", matched: toBool(patient.pregnant) },
+                { key: "bedridden", label: "Bedridden", matched: toBool(patient.bedridden_immobile) },
+                { key: "outdoorWorker", label: "Outdoor worker", matched: toBool(patient.outdoor_worker) },
+                { key: "copd", label: "COPD", matched: toBool(patient.copd) },
+                { key: "asthma", label: "Asthma", matched: toBool(patient.asthma) },
+                { key: "cardiovascularDisease", label: "CVD", matched: toBool(patient.cardiovascular_disease) },
+                { key: "diabetes", label: "Diabetes", matched: toBool(patient.diabetes) },
+                { key: "ckd", label: "CKD", matched: toBool(patient.ckd) },
+                { key: "hypertension", label: "HT", matched: toBool(patient.hypertension) },
+                { key: "lungCancer", label: "Lung cancer", matched: toBool(patient.lung_cancer) },
+                { key: "postCovid", label: "Post-Covid", matched: toBool(patient.post_covid) || toBool(patient.post_covid_complications) },
+            ];
+
+            if (selected && Object.values(selected).some(Boolean)) {
+                return allChecks.filter(item => selected[item.key] && item.matched).map(item => item.label);
+            }
+
+            return allChecks.filter(item => item.matched).map(item => item.label);
+        }
+
+        function getMatchedVulnerabilityKeys(patient) {
+            const checks = [
+                { key: "ageOver65", matched: toBool(patient.age_over_65) || Number(patient.age) >= 65 },
+                { key: "ageUnder5", matched: toBool(patient.age_under_5) || Number(patient.age) < 5 },
+                { key: "pregnant", matched: toBool(patient.pregnant) },
+                { key: "bedridden", matched: toBool(patient.bedridden_immobile) },
+                { key: "outdoorWorker", matched: toBool(patient.outdoor_worker) },
+                { key: "copd", matched: toBool(patient.copd) },
+                { key: "asthma", matched: toBool(patient.asthma) },
+                { key: "cardiovascularDisease", matched: toBool(patient.cardiovascular_disease) },
+                { key: "diabetes", matched: toBool(patient.diabetes) },
+                { key: "ckd", matched: toBool(patient.ckd) },
+                { key: "hypertension", matched: toBool(patient.hypertension) },
+                { key: "lungCancer", matched: toBool(patient.lung_cancer) },
+                { key: "postCovid", matched: toBool(patient.post_covid) || toBool(patient.post_covid_complications) },
+            ];
+
+            return checks.filter(item => item.matched).map(item => item.key);
+        }
+
+        function patientMatchesSelectedFilters(patient, selected) {
+            const selectedKeys = Object.keys(selected).filter(key => selected[key]);
+            if (!selectedKeys.length) return true;
+
+            // OR checkbox filtering:
+            // A patient is included when they match at least ONE selected vulnerability factor.
+            // Example: Age > 65 + Age < 5 means older adults OR young children.
+            const matchedKeys = getMatchedVulnerabilityKeys(patient);
+            return selectedKeys.some(key => matchedKeys.includes(key));
+        }
+
+        function getRiskRank(riskLevel) {
+            const level = textValue(riskLevel).toUpperCase();
+            if (level === "CRITICAL") return 4;
+            if (level === "HIGH") return 3;
+            if (level === "MEDIUM") return 2;
+            if (level === "LOW") return 1;
+            return 0;
+        }
+
+        function sortPatientsForDisplay(patients, selected) {
+            return [...patients].sort((a, b) => {
+                const matchedDiff = getMatchedVulnerabilityItems(b, selected).length - getMatchedVulnerabilityItems(a, selected).length;
+                if (matchedDiff !== 0) return matchedDiff;
+
+                const riskDiff = getRiskRank(b.final_risk_level) - getRiskRank(a.final_risk_level);
+                if (riskDiff !== 0) return riskDiff;
+
+                const dateA = String(a.last_contact_date || "");
+                const dateB = String(b.last_contact_date || "");
+                return dateB.localeCompare(dateA);
+            });
+        }
+
+        function getRiskColor(riskLevel) {
+            const level = textValue(riskLevel).toUpperCase();
+            if (level === "CRITICAL") return "bg-red-100 text-red-700";
+            if (level === "HIGH") return "bg-orange-100 text-orange-700";
+            if (level === "MEDIUM") return "bg-yellow-100 text-yellow-700";
+            return "bg-green-100 text-green-700";
+        }
+
+        function buildVulnerabilityText(patient, selected = null) {
+            const matchedItems = getMatchedVulnerabilityItems(patient, selected);
+            return matchedItems.length ? matchedItems.join(", ") : "-";
+        }
+
+        function renderPatientError(message) {
+            const tableBody = document.getElementById("patientTableBody");
+            if (!tableBody) return;
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-red-500">
+                        โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(message)}<br>
+                        <span class="text-xs text-slate-500">ตรวจสอบว่า FastAPI เปิดอยู่ที่ ${API_BASE}</span>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderPatientTable(patients, selected = null) {
+            const tableBody = document.getElementById("patientTableBody");
+            if (!tableBody) return;
+
+            // Force a visible refresh so the table never keeps stale rows after changing checkboxes.
+            tableBody.innerHTML = "";
+
+            if (!patients || !patients.length) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                            ไม่พบผู้ป่วยตามเงื่อนไขที่เลือก
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = patients.map(patient => {
+                const riskLevel = textValue(patient.final_risk_level, "UNKNOWN").toUpperCase();
+                const riskColor = getRiskColor(riskLevel);
+                const vulnerabilityText = buildVulnerabilityText(patient, selected);
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-800">${escapeHtml(patient.name_masked)}</div>
+                            <div class="text-xs text-slate-400">${escapeHtml(patient.patient_id)}</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">
+                            <div class="font-semibold">${escapeHtml(patient.tambon || "-")}</div>
+                            <div class="text-xs text-slate-400">${escapeHtml(patient.amphoe || "-")} / ${escapeHtml(patient.province || "-")}</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">${escapeHtml(vulnerabilityText)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${riskColor}">${escapeHtml(riskLevel)}</span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">${escapeHtml(patient.last_contact_date)}</td>
+                        <td class="px-6 py-4 text-slate-600">${escapeHtml(patient.recommended_intervention)}</td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function updatePatientCountText(count, label = "Patients Identified") {
+            const countBadge = document.getElementById("identifiedPatientsBadge");
+            if (countBadge) countBadge.innerText = `${count} ${label}`;
+
+            const footerText = document.querySelector(".p-6.bg-slate-50.border-t span");
+            if (footerText) footerText.innerText = `Showing ${count} targeted patients`;
+        }
+
+        async function getFilteredPatients(limit = 5000) {
+            const selected = getSelectedVulnerabilityFilters();
+            const patients = await fetchPatients(limit);
+
+            // Apply OR filtering in the browser so multiple vulnerability checkboxes mean
+            // "match any selected risk factor" rather than "must match every factor".
+            return patients.filter(patient => patientMatchesSelectedFilters(patient, selected));
+        }
+
+        async function findPatients() {
+            try {
+                const selected = getSelectedVulnerabilityFilters();
+                const filteredPatients = await getFilteredPatients(5000);
+                const displayPatients = sortPatientsForDisplay(filteredPatients, selected);
+
+                renderPatientTable(displayPatients.slice(0, 200), selected);
+                updatePatientCountText(filteredPatients.length);
+                renderVulnerablePatientCards(displayPatients);
+            } catch (error) {
+                console.error(error);
+                renderPatientError(error.message);
+            }
+        }
+
+
+
+        function buildAreaAlertsUrl(limit = 5000) {
+            const { startDate, endDate } = getDateRange();
+            let url = `${API_BASE}/area-alerts/daily?limit=${limit}`;
+            if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
+            if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
+            url = appendLocationParams(url);
+            return url;
+        }
+
+        function groupAreaAlerts(rows) {
+            const grouped = {};
+            rows.forEach(row => {
+                const key = `${row.province || "-"}|${row.amphoe || "-"}|${row.tambon || "-"}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        province: row.province || "-",
+                        amphoe: row.amphoe || "-",
+                        tambon: row.tambon || "-",
+                        peakPm25: 0,
+                        maxTemp: 0,
+                        minTemp: null,
+                        patientCount: 0,
+                        critical: 0,
+                        high: 0,
+                    };
+                }
+                const item = grouped[key];
+                item.peakPm25 = Math.max(item.peakPm25, Number(row.avg_pm25 || row.pm25_avg || 0));
+                const temp = Number(row.avg_temperature || row.temperature_avg || 0);
+                item.maxTemp = Math.max(item.maxTemp, temp);
+                item.minTemp = item.minTemp === null ? temp : Math.min(item.minTemp, temp);
+                item.patientCount += Number(row.patient_count || 0);
+                item.critical += Number(row.critical_patient_count || 0);
+                item.high += Number(row.high_patient_count || 0);
+            });
+            return Object.values(grouped);
+        }
+
+        async function loadAreaAlertCards() {
+            try {
+                const rows = await fetchJson(buildAreaAlertsUrl());
+                const areas = groupAreaAlerts(rows);
+                const topEnv = [...areas].sort((a, b) => b.peakPm25 - a.peakPm25).slice(0, 3);
+
+                const envCards = document.getElementById("environmentPeakCards");
+                if (envCards) {
+                    envCards.innerHTML = topEnv.length ? topEnv.map(area => `
+                        <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
+                            <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
+                                <span class="text-sm font-bold text-slate-800">${escapeHtml(area.tambon)}</span>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
+                                    <div class="flex items-baseline gap-0.5">
+                                        <span class="text-2xl font-black text-red-600 leading-none">${Number(area.peakPm25).toFixed(0)}</span>
+                                        <span class="text-[9px] font-bold text-red-500">µg/m³</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col text-right">
+                                    <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp</span>
+                                    <span class="text-lg font-black text-orange-600 leading-none">${Number(area.maxTemp).toFixed(1)}°C</span>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-semibold">${escapeHtml(area.amphoe)} / ${escapeHtml(area.province)}</div>
+                        </div>
+                    `).join("") : `<div class="col-span-3 text-center text-slate-400 py-6">ไม่พบข้อมูลพื้นที่ตามเงื่อนไขที่เลือก</div>`;
+                }
+            } catch (error) {
+                console.error("Load area alert cards error:", error);
+            }
+        }
+
+        function groupPatientsByTambon(patients) {
+            const grouped = {};
+
+            patients.forEach(patient => {
+                const key = `${patient.province || "-"}|${patient.amphoe || "-"}|${patient.tambon || "-"}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        province: patient.province || "-",
+                        amphoe: patient.amphoe || "-",
+                        tambon: patient.tambon || "-",
+                        patientCount: 0,
+                        critical: 0,
+                        high: 0,
+                    };
+                }
+
+                grouped[key].patientCount += 1;
+                const risk = textValue(patient.final_risk_level).toUpperCase();
+                if (risk === "CRITICAL") grouped[key].critical += 1;
+                if (risk === "HIGH") grouped[key].high += 1;
+            });
+
+            return Object.values(grouped);
+        }
+
+        function renderVulnerablePatientCards(patients) {
+            const patientCards = document.getElementById("vulnerablePatientCards");
+            if (!patientCards) return;
+
+            const topPatient = groupPatientsByTambon(patients)
+                .sort((a, b) => {
+                    const riskDiff = (b.critical + b.high) - (a.critical + a.high);
+                    if (riskDiff !== 0) return riskDiff;
+                    return b.patientCount - a.patientCount;
+                })
+                .slice(0, 3);
+
+            patientCards.innerHTML = topPatient.length ? topPatient.map(area => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-sm font-bold text-slate-700 block">${escapeHtml(area.tambon)}</span>
+                        <span class="text-[10px] text-slate-400">${escapeHtml(area.amphoe)} / ${escapeHtml(area.province)}</span>
+                        <span class="text-[10px] text-red-500 block mt-1">Critical ${area.critical} · High ${area.high}</span>
+                    </div>
+                    <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
+                        <span class="text-lg font-black text-blue-600">${area.patientCount}</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
+                    </div>
+                </div>
+            `).join("") : `<div class="col-span-3 text-center text-slate-400 py-6">ไม่พบผู้ป่วยตาม vulnerability/พื้นที่ที่เลือก</div>`;
+        }
+
+        async function refreshDashboardForSelection() {
+            updateLocationSelectionText();
+            await loadTrendChart();
+            await loadAreaAlertCards();
+            await findPatients();
+        }
+
+        function setupEventListeners() {
+            const findPatientsBtn = document.getElementById("findPatientsBtn");
+            const updateDashboardBtn = document.getElementById("updateDashboardBtn");
+            const provinceSelect = document.getElementById("provinceSelect");
+            const amphoeSelect = document.getElementById("amphoeSelect");
+            const tambonSelect = document.getElementById("tambonSelect");
+            const startDateInput = document.getElementById("startDateInput");
+            const endDateInput = document.getElementById("endDateInput");
+            const btnDaily = document.getElementById("btnDaily");
+            const btnWeekly = document.getElementById("btnWeekly");
+            const vulnerabilityFilters = document.querySelectorAll(".vulnerability-filter");
+
+            findPatientsBtn?.addEventListener("click", findPatients);
+            vulnerabilityFilters.forEach(input => input.addEventListener("change", findPatients));
+            updateDashboardBtn?.addEventListener("click", refreshDashboardForSelection);
+
+            provinceSelect?.addEventListener("change", async () => {
+                await loadAmphoes();
+                await loadTambons();
+                await refreshDashboardForSelection();
+            });
+
+            amphoeSelect?.addEventListener("change", async () => {
+                await loadTambons();
+                await refreshDashboardForSelection();
+            });
+
+            tambonSelect?.addEventListener("change", refreshDashboardForSelection);
+
+            startDateInput?.addEventListener("change", refreshDashboardForSelection);
+            endDateInput?.addEventListener("change", refreshDashboardForSelection);
+
+            btnDaily?.addEventListener("click", async () => {
+                currentTrendMode = "daily";
+                setTrendButtonState("daily");
+                await loadTrendChart();
+            });
+
+            btnWeekly?.addEventListener("click", async () => {
+                currentTrendMode = "weekly";
+                setTrendButtonState("weekly");
+                await loadTrendChart();
+            });
+        }
+
+        async function loadDashboardData() {
+            await loadProvinces();
+            await loadDashboardSummary();
+            await loadTrendChart();
+            await loadAreaAlertCards();
+            await findPatients();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setupEventListeners();
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
