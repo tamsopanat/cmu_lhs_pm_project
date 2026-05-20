@@ -318,6 +318,8 @@ def get_patients(
     diabetes: Optional[bool] = Query(default=None),
     ckd: Optional[bool] = Query(default=None),
     hypertension: Optional[bool] = Query(default=None),
+    lung_cancer: Optional[bool] = Query(default=None),
+    post_covid: Optional[bool] = Query(default=None),
     limit: int = Query(default=100, ge=1, le=5000),
 ):
     filtered = patient_master_df.copy()
@@ -339,6 +341,8 @@ def get_patients(
         "diabetes": diabetes,
         "ckd": ckd,
         "hypertension": hypertension,
+        "lung_cancer": lung_cancer,
+        "post_covid": post_covid,
     }
 
     for column, value in bool_filters.items():
