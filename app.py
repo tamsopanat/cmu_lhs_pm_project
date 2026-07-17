@@ -28,16 +28,17 @@ app.add_middleware(
 # -----------------------------------
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
+DATA_DIR2 = BASE_DIR / "data2"
 if not DATA_DIR.exists():
     DATA_DIR = BASE_DIR.parent / "data"
 
 DEMO_CSV = DATA_DIR / "demo_pm25_health_2000_rows.csv"
-PATIENTS_CSV = DATA_DIR / "patients.csv"
+PATIENTS_CSV = DATA_DIR2 / "patients.csv"
 PATIENT_VULNERABILITY_CSV = DATA_DIR / "patient_vulnerability.csv"
-ENV_DAILY_CSV = DATA_DIR / "environment_daily.csv"
-ENV_HOURLY_CSV = DATA_DIR / "environment_hourly.csv"
+ENV_DAILY_CSV = DATA_DIR2 / "environment_daily.csv"
+ENV_HOURLY_CSV = DATA_DIR2 / "environment_hourly.csv"
 PATIENT_RISK_DAILY_CSV = DATA_DIR / "patient_risk_daily.csv"
-AREA_ALERT_DAILY_CSV = DATA_DIR / "area_alert_daily.csv"
+AREA_ALERT_DAILY_CSV = DATA_DIR2 / "area_alert_daily.csv"
 CONTACT_LOG_CSV = DATA_DIR / "contact_log.csv"
 
 
