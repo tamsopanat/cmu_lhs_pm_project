@@ -197,23 +197,23 @@
                             <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Demographic Factors</h4>
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-age-65" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Age > 65</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-age-5" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Children < 5</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-bedridden" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Bedridden</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-worker" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Outdoor Worker</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-pregnant" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Pregnant</span>
                                 </label>
                             </div>
@@ -224,23 +224,23 @@
                             <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Underlying Conditions</h4>
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-copd" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">COPD</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-asthma" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Asthma</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-cvd" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Cardiovascular Dis.</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-diabetes" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Diabetes</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-ht" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Hypertension</span>
                                 </label>
                             </div>
@@ -987,6 +987,18 @@
             const startDate = document.getElementById('start-date').value;
             const endDate = document.getElementById('end-date').value;
             
+            // Get checkbox states
+            const chk_age_65 = document.getElementById('chk-age-65').checked;
+            const chk_age_5 = document.getElementById('chk-age-5').checked;
+            const chk_bedridden = document.getElementById('chk-bedridden').checked;
+            const chk_worker = document.getElementById('chk-worker').checked;
+            const chk_pregnant = document.getElementById('chk-pregnant').checked;
+            const chk_copd = document.getElementById('chk-copd').checked;
+            const chk_asthma = document.getElementById('chk-asthma').checked;
+            const chk_cvd = document.getElementById('chk-cvd').checked;
+            const chk_diabetes = document.getElementById('chk-diabetes').checked;
+            const chk_ht = document.getElementById('chk-ht').checked;
+
             const start = new Date(startDate);
             const end = new Date(endDate);
             const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
@@ -999,7 +1011,15 @@
             }
 
             try {
-                const response = await fetch(`/api/data?province=${prov}&amphoe=${amphoe}&tambon=${tambon}&start_date=${startDate}&end_date=${endDate}&mode=${currentMode}`);
+                // Build dynamic query parameters for the API fetch
+                const params = new URLSearchParams({
+                    province: prov, amphoe: amphoe, tambon: tambon,
+                    start_date: startDate, end_date: endDate, mode: currentMode,
+                    chk_age_65, chk_age_5, chk_bedridden, chk_worker, chk_pregnant,
+                    chk_copd, chk_asthma, chk_cvd, chk_diabetes, chk_ht
+                });
+
+                const response = await fetch(`/api/data?${params.toString()}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

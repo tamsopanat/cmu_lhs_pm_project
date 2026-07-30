@@ -52,7 +52,17 @@ def get_dashboard_data(
     tambon: str = "All Tambon", 
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None,
-    mode: str = "daily" 
+    mode: str = "daily",
+    chk_age_65: bool = True,
+    chk_age_5: bool = False,
+    chk_bedridden: bool = True,
+    chk_worker: bool = False,
+    chk_pregnant: bool = False,
+    chk_copd: bool = True,
+    chk_asthma: bool = True,
+    chk_cvd: bool = False,
+    chk_diabetes: bool = False,
+    chk_ht: bool = False
 ):
     """
     Reads the CSV files, merges environmental and patient data,
@@ -135,20 +145,37 @@ def get_dashboard_data(
     combined_risk_patients = []
 
     for _, row in pat_loc.iterrows():
-        # Define Vulnerability Logic based on prompt rules
-        has_resp_issue = row['copd'] or row['asthma'] or row['lung_cancer'] or row['post_covid']
-        has_thermal_issue = row['age_over_65'] or row['bedridden_immobile'] or row['cardiovascular_disease'] or row['outdoor_worker']
+        # Dynamic Vulnerability Logic based on UI Checkboxes
+        has_resp_issue = False
+        if chk_copd and row['copd']: has_resp_issue = True
+        if chk_asthma and row['asthma']: has_resp_issue = True
+        
+        has_thermal_issue = False
+        if chk_age_65 and row['age_over_65']: has_thermal_issue = True
+        if chk_age_5 and row['age_under_5']: has_thermal_issue = True
+        if chk_bedridden and row['bedridden_immobile']: has_thermal_issue = True
+        if chk_worker and row['outdoor_worker']: has_thermal_issue = True
+        if chk_pregnant and row['pregnant']: has_thermal_issue = True
+        if chk_cvd and row['cardiovascular_disease']: has_thermal_issue = True
+        if chk_diabetes and row['diabetes']: has_thermal_issue = True
+        if chk_ht and row['hypertension']: has_thermal_issue = True
         
         is_air_risk = air_hazard_active and has_resp_issue
         is_thermal_risk = temp_hazard_active and has_thermal_issue
         
-        # Build display flags for UI
+        # Build display flags for UI (shows what underlying conditions this patient actually has)
         flags = []
         if row['age'] > 65: flags.append(f"Age {row['age']}")
+        elif row['age'] < 5: flags.append(f"Age {row['age']}")
         if row['bedridden_immobile']: flags.append("Bedridden")
+        if row['pregnant']: flags.append("Pregnant")
+        if row['outdoor_worker']: flags.append("Outdoor Worker")
         if row['copd']: flags.append("COPD")
         if row['asthma']: flags.append("Asthma")
         if row['cardiovascular_disease']: flags.append("CVD")
+        if row['diabetes']: flags.append("Diabetes")
+        if row['hypertension']: flags.append("Hypertension")
+        
         flags_str = ", ".join(flags) if flags else "General Risk"
 
         patient_obj = {
