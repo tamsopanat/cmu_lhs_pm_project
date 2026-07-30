@@ -1,456 +1,1059 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CMU Learning Health System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .risk-badge-high { background-color: #fee2e2; color: #991b1b; }
-        .risk-badge-med { background-color: #fef3c7; color: #92400e; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-    </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
 
-    <!-- Navigation Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 p-1.5 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl">
+                    C
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-800">CMU Learning Health <span class="text-blue-600">System</span> <span id="appVersionBadge" class="ml-2 text-[10px] font-bold text-slate-400 align-middle">v7</span></h1>
+                <h1 class="text-xl font-bold text-gray-900">CMU Learning Health System</h1>
             </div>
             <div class="flex items-center gap-4">
-                <span class="hidden md:block text-sm text-slate-500 font-medium">Chiang Mai Health District 1</span>
-                <div class="h-8 w-8 rounded-full bg-slate-200 border border-slate-300"></div>
+                <select id="roleSelector" onchange="switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
+                    <option value="provider">👨‍⚕️ Healthcare Provider</option>
+                    <option value="admin">🏛️ Administrator</option>
+                    <option value="student">🎓 Student</option>
+                    <option value="parent">👨‍👩‍👧 Parent</option>
+                </select>
+                <div id="roleBadge" class="text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">
+                    Provider View
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        <section aria-label="Environment and Trends" class="space-y-4">
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">1</span>
-                Environmental Overview & Timeline
-            </h2>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-10">
+
+        <!-- ======================================================= -->
+        <!-- STEP 1: ENVIRONMENTAL OVERVIEW -->
+        <!-- ======================================================= -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="mb-6">
+                <!-- Row 1: Section Name -->
+                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
+                    <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
+                    Environmental Exposure
+                </h2>
                 
-                <!-- Controls Row: Cascading Location + Time Range -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="w-full">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Province</label>
-                            <select id="provinceSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
-                                <option value="all" selected>ทุกจังหวัด</option>
-                            </select>
-                        </div>
-
-                        <div class="w-full">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Amphoe / District</label>
-                            <select id="amphoeSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
-                                <option value="all" selected>ทุกอำเภอ</option>
-                            </select>
-                        </div>
-
-                        <div class="w-full">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Tambon / Subdistrict</label>
-                            <select id="tambonSelect" class="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
-                                <option value="all" selected>ทุกตำบล</option>
-                            </select>
-                        </div>
+                <!-- Row 2: Controls (Location, Date Range & Toggles) -->
+                <div class="flex flex-wrap items-center gap-3">
+                    
+                    <!-- Province / Amphoe / Tambon Selector Group -->
+                    <div class="flex items-center bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3 space-x-2 shadow-sm">
+                        <select id="province-select" onchange="updateLocationDropdowns('province')" class="bg-transparent text-gray-600 text-sm focus:outline-none cursor-pointer">
+                            <!-- Populated via JS -->
+                        </select>
+                        <span class="text-gray-300">/</span>
+                        <select id="amphoe-select" onchange="updateLocationDropdowns('amphoe')" class="bg-transparent text-gray-600 text-sm focus:outline-none cursor-pointer">
+                            <!-- Populated via JS -->
+                        </select>
+                        <span class="text-gray-300">/</span>
+                        <select id="location-select" onchange="fetchDashboardData()" class="bg-transparent text-gray-900 text-sm font-bold focus:outline-none cursor-pointer">
+                            <!-- Populated via JS -->
+                        </select>
                     </div>
 
-                    <div class="flex flex-col lg:flex-row gap-4 items-end">
-                        <div class="w-full lg:w-auto">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Time Range</label>
-                            <div class="flex items-center gap-2">
-                                <input id="startDateInput" type="date" class="border border-slate-200 rounded-lg px-3 h-10 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer" value="2026-05-01">
-                                <span class="text-slate-400 text-sm font-medium">to</span>
-                                <input id="endDateInput" type="date" class="border border-slate-200 rounded-lg px-3 h-10 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer" value="2026-05-07">
-                            </div>
-                        </div>
+                    <!-- Date Range -->
+                    <div class="flex items-center space-x-2 bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3 shadow-sm">
+                        <input type="date" id="start-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-04-10">
+                        <span class="text-gray-400">-</span>
+                        <input type="date" id="end-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-05-10">
+                    </div>
 
-                        <div class="flex-1 w-full">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Current Selection</label>
-                            <div id="locationSelectionText" class="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 flex items-center">
-                                ทุกจังหวัด / ทุกอำเภอ / ทุกตำบล
-                            </div>
-                        </div>
-
-                        <button id="updateDashboardBtn" class="bg-blue-600 text-white font-bold h-10 px-6 rounded-lg hover:bg-blue-700 transition shadow-sm w-full lg:w-auto flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                            Update
+                    <!-- Trend Buttons -->
+                    <div class="inline-flex rounded-md shadow-sm" role="group">
+                        <button type="button" id="btn-daily" class="px-5 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-gray-200 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700">
+                            Daily Trend
+                        </button>
+                        <button type="button" id="btn-weekly" class="px-5 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-md hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700">
+                            Weekly Trend
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- PM & Temp Trends Chart -->
-                <div class="flex flex-col">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800">PM2.5 Exposure & Temperature Trends</h3>
-                            <p class="text-xs text-slate-500 italic" id="chartSubtitle">Reading concentration hourly average (µg/m³) and Temperature (°C)</p>
-                        </div>
-                        <div class="flex flex-col md:flex-row items-end md:items-center gap-3">
-                            <!-- View Toggle -->
-                            <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                                <button id="btnDaily" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition">Daily Trend</button>
-                                <button id="btnWeekly" class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition">Weekly Trend</button>
-                            </div>
-                            <!-- Alerts -->
-                            <div class="flex gap-2">
-                                <div class="text-[10px] font-bold text-orange-600 flex items-center gap-1 bg-orange-50 border border-orange-200 px-2 py-1.5 rounded-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                                    38°C HEAT
-                                </div>
-                                <div class="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1.5 rounded-lg">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                    PM2.5 PEAK
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-container w-full h-[300px]">
-                        <canvas id="pmTrendChart"></canvas>
-                    </div>
+            <!-- Chart Container -->
+            <div class="relative w-full h-[350px]">
+                <canvas id="envChart"></canvas>
+            </div>
+            <div class="flex justify-center gap-6 mt-4 text-xs text-gray-500">
+                <div class="flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full bg-[#ef4444]"></span> Critical PM2.5 (≥150)
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full bg-[#f97316]"></span> Extreme Heat (≥38°C)
                 </div>
             </div>
         </section>
 
-        <section aria-label="Vulnerability Parameters" class="space-y-4">
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">2</span>
-                Vulnerability Parameters
-            </h2>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Demographics -->
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                            Demographic Factors
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_age_over_65" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Age &gt; 65
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_age_under_5" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Age &lt; 5
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_pregnant" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Pregnant
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_bedridden" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Bedridden / Immobile
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_outdoor_worker" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Outdoor Workers
-                            </label>
-                        </div>
+        <!-- ======================================================= -->
+        <!-- PROVIDER SPECIFIC VIEWS (Steps 2 & 3) -->
+        <!-- ======================================================= -->
+        <div id="provider-view" class="space-y-10">
+            <!-- SECTION 1: Clinical Outreach & Vulnerability Management -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <!-- Dashboard Header (Admin Style) -->
+                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                            Clinical Outreach & Vulnerability Management
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.</p>
                     </div>
-
-                    <!-- Underlying Diseases -->
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                            Underlying Conditions
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_copd" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> COPD
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_asthma" type="checkbox" checked class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Asthma
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_cardiovascular_disease" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Cardiovascular Disease
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_diabetes" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Diabetes
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_lung_cancer" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Lung Cancer
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600">
-                                <input id="filter_post_covid" type="checkbox" class="vulnerability-filter rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Post-Covid Complications
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Button -->
-                <div class="flex justify-end pt-2 border-t border-slate-100">
-                    <button id="findPatientsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-blue-200 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        Find Target Patients
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <section aria-label="Alerts and Outreach" class="space-y-4">
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
-                Area Alerts & Patient Outreach
-                <div class="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-200 shadow-sm ml-2">
-                    <span class="relative flex h-2.5 w-2.5">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    <span id="total-risk-count" class="bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full animate-pulse border border-red-200 mb-1">
+                        Loading...
                     </span>
-                    <span id="identifiedPatientsBadge" class="text-xs font-bold uppercase tracking-wider">12 Patients Identified</span>
-                </div>
-            </h2>
-            
-            <div class="flex flex-col gap-6">
-                <!-- Activity Alerts Cards: 2 Sets -->
-                <div class="space-y-5 border border-slate-200 p-5 rounded-2xl bg-white shadow-sm">
-                    
-                    <!-- Set 1: Environmental Peaks -->
-                    <div>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-                            Environmental Peaks <span class="text-[10px] text-slate-400 normal-case font-normal">(Highest in selected time range)</span>
-                        </h3>
-                        <div id="environmentPeakCards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <!-- Chang Phueak -->
-                            <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
-                                <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
-                                    <span class="text-sm font-bold text-slate-800">ช้างเผือก (Chang Phueak)</span>
-                                </div>
-                                <div class="flex justify-between items-end">
-                                    <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
-                                        <div class="flex items-baseline gap-0.5">
-                                            <span class="text-2xl font-black text-red-600 leading-none">161</span>
-                                            <span class="text-[9px] font-bold text-red-500">µg/m³</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col text-right">
-                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
-                                        <div class="flex items-baseline justify-end gap-1">
-                                            <span class="text-sm font-bold text-blue-500">24°</span>
-                                            <span class="text-[10px] text-slate-400">-</span>
-                                            <span class="text-lg font-black text-orange-600 leading-none">39°C</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Suthep -->
-                            <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
-                                <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
-                                    <span class="text-sm font-bold text-slate-800">สุเทพ (Suthep)</span>
-                                </div>
-                                <div class="flex justify-between items-end">
-                                    <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
-                                        <div class="flex items-baseline gap-0.5">
-                                            <span class="text-2xl font-black text-red-600 leading-none">152</span>
-                                            <span class="text-[9px] font-bold text-red-500">µg/m³</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col text-right">
-                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
-                                        <div class="flex items-baseline justify-end gap-1">
-                                            <span class="text-sm font-bold text-blue-500">23°</span>
-                                            <span class="text-[10px] text-slate-400">-</span>
-                                            <span class="text-lg font-black text-orange-600 leading-none">38°C</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Sri Wichai -->
-                            <div class="p-3.5 bg-orange-50 border border-orange-200 rounded-xl shadow-sm flex flex-col gap-3">
-                                <div class="flex justify-between items-start border-b border-orange-200/50 pb-2">
-                                    <span class="text-sm font-bold text-slate-800">ศรีวิชัย (Sri Wichai)</span>
-                                </div>
-                                <div class="flex justify-between items-end">
-                                    <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
-                                        <div class="flex items-baseline gap-0.5">
-                                            <span class="text-2xl font-black text-orange-600 leading-none">84</span>
-                                            <span class="text-[9px] font-bold text-orange-500">µg/m³</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col text-right">
-                                        <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp (Min - Max)</span>
-                                        <div class="flex items-baseline justify-end gap-1">
-                                            <span class="text-sm font-bold text-blue-500">22°</span>
-                                            <span class="text-[10px] text-slate-400">-</span>
-                                            <span class="text-lg font-black text-orange-600 leading-none">36°C</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Set 2: Patient Counts -->
-                    <div>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3 mt-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                            Vulnerable Patient Alerts <span class="text-[10px] text-slate-400 normal-case font-normal">(Top 3 tambons matching any selected filter)</span>
-                        </h3>
-                        <div id="vulnerablePatientCards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
-                                <span class="text-sm font-bold text-slate-700">ช้างเผือก (Chang Phueak)</span>
-                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
-                                    <span class="text-lg font-black text-blue-600">5</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
-                                </div>
-                            </div>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
-                                <span class="text-sm font-bold text-slate-700">สุเทพ (Suthep)</span>
-                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
-                                    <span class="text-lg font-black text-blue-600">6</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
-                                </div>
-                            </div>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
-                                <span class="text-sm font-bold text-slate-700">ศรีวิชัย (Sri Wichai)</span>
-                                <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
-                                    <span class="text-lg font-black text-blue-600">1</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patient</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Target Patient List -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <!-- High-level Patient Cohort Breakdown (Admin Style Cards) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- PM2.5 Driven Cohort -->
+                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 flex flex-col justify-between shadow-sm">
                         <div>
-                            <h3 class="text-lg font-bold text-slate-800">Targeted Vulnerable Patients</h3>
-                            <p class="text-xs text-slate-500">Filtered list based on Step 1 (Locations) and Step 2 (Vulnerabilities)</p>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-red-600 text-lg">⚠️</span>
+                                <h3 class="font-bold text-red-900 text-sm uppercase tracking-wider">Air Quality Risk Cohort</h3>
+                            </div>
+                            <div id="air-cohort-count" class="text-3xl font-black text-red-700 mb-1">--</div>
+                            <p class="text-xs text-red-800">Triggered by max PM2.5 primarily in selected district.</p>
                         </div>
-                        <div class="flex gap-2">
-                            <button class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Export for VHV
-                            </button>
-                            <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                Broadcast SMS
-                            </button>
+                        <div class="mt-4 pt-4 border-t border-red-200">
+                            <div class="text-xs text-red-800 font-medium">Flagged for COPD, Asthma, and other respiratory conditions.</div>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100">
-                                <tr>
-                                    <th class="px-6 py-4">Patient Name</th>
-                                    <th class="px-6 py-4">Tambon</th>
-                                    <th class="px-6 py-4">Clinical Vulnerability</th>
-                                    <th class="px-6 py-4">Environmental Risk Level</th>
-                                    <th class="px-6 py-4">Last Contact</th>
-                                    <th class="px-6 py-4 text-center">Intervention</th>
-                                </tr>
-                            </thead>
-                            <tbody id="patientTableBody" class="divide-y divide-slate-50 text-sm">
-</tbody>
-                        </table>
+                    
+                    <!-- Thermal Driven Cohort -->
+                    <div class="bg-orange-50 rounded-xl p-5 border border-orange-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-orange-600 text-lg">🌡️</span>
+                                <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider">Thermal Risk Cohort</h3>
+                            </div>
+                            <div id="thermal-cohort-count" class="text-3xl font-black text-orange-700 mb-1">--</div>
+                            <p class="text-xs text-orange-800">Triggered by extreme heat during peak afternoon hours.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-orange-200">
+                            <div class="text-xs text-orange-800 font-medium">Flagged for Age > 65, Cardiovascular Disease, and Bedridden status.</div>
+                        </div>
                     </div>
-                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400 font-medium">
-                        <span>Showing 4 targeted patients in 3 critical Tambons</span>
-                        <div class="flex gap-4">
-                            <a href="#" class="hover:text-blue-600">Previous</a>
-                            <a href="#" class="text-blue-600 font-bold">1</a>
-                            <a href="#" class="hover:text-blue-600">Next</a>
+
+                    <!-- Combined Risk Cohort -->
+                    <div class="bg-purple-50 rounded-xl p-5 border border-purple-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-purple-600 text-lg">⚕️</span>
+                                <h3 class="font-bold text-purple-900 text-sm uppercase tracking-wider">Critical Combined Risk</h3>
+                            </div>
+                            <div id="combined-cohort-count" class="text-3xl font-black text-purple-700 mb-1">--</div>
+                            <p class="text-xs text-purple-800">Intersection of extreme heat and hazardous PM2.5 levels.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-purple-200">
+                            <div class="text-xs text-purple-800 font-medium">Highest priority for immediate outreach.</div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
-        
-        <!-- AI SMS Generator Modal -->
-        <div id="aiSmsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col">
-                <div class="bg-purple-600 p-4 flex items-center justify-between">
-                    <h3 class="text-white font-bold flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                        AI SMS Drafter
-                    </h3>
-                    <button onclick="closeAISMSModal()" class="text-purple-200 hover:text-white transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+            </section>
+
+            <!-- SECTION 2: Clinical Parameter Assessment -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        Clinical Parameter Assessment
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Define vulnerability thresholds and assessment windows to identify at-risk patient cohorts.</p>
                 </div>
-                <div class="p-6 flex flex-col gap-4">
+
+                <!-- Vulnerability Parameters (Filters) -->
+                <div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+                        <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
+                            <span class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">🎯</span>
+                            Vulnerability Parameters
+                        </h3>
+                        <!-- Vulnerability Date Range Selection -->
+                        <div class="flex items-center space-x-3 bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Assessment:</span>
+                            <div class="flex items-center space-x-1">
+                                <input type="date" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2025-01-01">
+                                <span class="text-gray-400">-</span>
+                                <input type="date" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-05-10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <!-- Demographics -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Demographic Factors</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Age > 65</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Children < 5</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Bedridden</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Outdoor Worker</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Pregnant</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Underlying Conditions -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Underlying Conditions</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">COPD</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" checked class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Asthma</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Cardiovascular Dis.</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Diabetes</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Hypertension</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Targeted Patient List -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <!-- Targeted Patient List -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">📋</span>
+                            Targeted Patient List
+                        </h3>
+                        <button class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 flex items-center gap-1">
+                            ⬇️ Export CSV
+                        </button>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 border-b text-gray-500 font-medium">
+                                    <tr>
+                                        <th class="px-6 py-4">Patient Info</th>
+                                        <th class="px-6 py-4">Location</th>
+                                        <th class="px-6 py-4">Environmental Risk Level</th>
+                                        <th class="px-6 py-4">Vulnerability Flags</th>
+                                        <th class="px-6 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patient-table-body" class="divide-y divide-gray-100">
+                                    <!-- Populated dynamically via FastAPI -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 text-center text-xs text-gray-500">
+                            Showing 3 of 12 filtered patients. <a href="#" class="text-blue-600 hover:underline font-medium">View all</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div> <!-- End Provider View -->
+
+        <!-- ======================================================= -->
+        <!-- ADMINISTRATOR VIEW -->
+        <!-- ======================================================= -->
+        <div id="admin-view" class="hidden space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        District-Wide Health & Operations Impact
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Aggregated, de-identified environmental health data and actionable guidelines for administration.</p>
+                </div>
+
+                <!-- High-level Aggregate Stats Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Air Quality Impact -->
+                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-red-600 text-lg">⚠️</span>
+                                <h3 class="font-bold text-red-900 text-sm uppercase tracking-wider">Air Quality Alert</h3>
+                            </div>
+                            <div class="text-3xl font-black text-red-700 mb-1">Hazardous</div>
+                            <p class="text-xs text-red-800">Peak PM2.5 (175 µg/m³) recorded in Suthep district.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-red-200">
+                            <div class="text-lg font-black text-red-900">185 Individuals</div>
+                            <div class="text-xs text-red-800 font-medium">at high risk due to respiratory conditions</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Thermal Impact -->
+                    <div class="bg-orange-50 rounded-xl p-5 border border-orange-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-orange-600 text-lg">🌡️</span>
+                                <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider">Thermal Alert</h3>
+                            </div>
+                            <div class="text-3xl font-black text-orange-700 mb-1">Extreme Heat</div>
+                            <p class="text-xs text-orange-800">Temperatures exceeding 40°C during peak afternoon hours.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-orange-200">
+                            <div class="text-lg font-black text-orange-900">112 Individuals</div>
+                            <div class="text-xs text-orange-800 font-medium">at high risk due to age or cardiovascular issues</div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Impact -->
+                    <div class="bg-purple-50 rounded-xl p-5 border border-purple-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-purple-600 text-lg">⚕️</span>
+                                <h3 class="font-bold text-purple-900 text-sm uppercase tracking-wider">Combined Risk</h3>
+                            </div>
+                            <div class="text-3xl font-black text-purple-700 mb-1">Critical</div>
+                            <p class="text-xs text-purple-800">Intersection of extreme heat and hazardous PM2.5.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-purple-200">
+                            <div class="text-lg font-black text-purple-900">45 Individuals</div>
+                            <div class="text-xs text-purple-800 font-medium">facing compounded critical vulnerability</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidelines Separated by Risk -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Air Quality Protocols -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 tracking-wider">Recipient</label>
-                        <div id="aiSmsRecipient" class="text-sm font-semibold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200">Patient Name</div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-end mb-1">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Message Draft</label>
-                            <span id="aiSmsStatus" class="text-xs font-bold text-purple-600 animate-pulse hidden flex items-center gap-1">
-                                <svg id="statusSpinner" class="animate-spin h-3 w-3 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span id="statusTextContent">Drafting...</span>
-                            </span>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center">⚠️</span>
+                            Air Quality Protocols (PM2.5)
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>😷</span> N95 Mask Mandate
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">N95 masks are strictly required for transit between campus buildings. Ensure distribution points at all faculty entrances are fully stocked.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🌬️</span> Indoor Air Purification
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Activate heavy-duty HVAC HEPA filters across all lecture halls. Keep all dormitory, classroom, and office windows completely sealed.</p>
+                            </div>
                         </div>
-                        <textarea id="aiSmsTextarea" rows="4" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition disabled:bg-slate-50 disabled:text-slate-500" placeholder="AI will generate the message here..."></textarea>
-                        <p class="text-[10px] text-slate-400 mt-2">AI-generated content. Please review before sending.</p>
+                    </div>
+
+                    <!-- Thermal Protocols -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-orange-100 text-orange-600 w-8 h-8 rounded-lg flex items-center justify-center">🌡️</span>
+                            Thermal Protocols (Heat Wave)
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>💧</span> Mandatory Hydration Stations
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Deploy mobile water stations in high-traffic shaded areas. Send SMS alerts reminding staff and students to hydrate hourly.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>👷</span> Campus Staff Work Limits
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Restrict outdoor maintenance, landscaping, and security staff to 15-minute shifts outdoors between 11:00 AM and 4:00 PM.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Combined Risk Protocols -->
+                    <div class="lg:col-span-2 mt-2">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center">🛑</span>
+                            Universal High-Risk Actions (Combined Exposure)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🚫</span> Outdoor Activities Suspended
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">All physical education classes and outdoor campus events are cancelled. Sports facilities must operate strictly indoors.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🚌</span> Increased Transit Frequency
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Campus EV shuttles must operate at a 5-minute frequency to minimize outdoor walking and heat/PM2.5 exposure for all individuals.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                    <button onclick="closeAISMSModal()" class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition">Cancel</button>
-                    <button id="aiSmsSendBtn" onclick="sendAISMS()" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition flex items-center gap-2 shadow-sm">
-                        <svg id="sendIconDefault" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                        <svg id="sendIconSuccess" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                        <span id="sendBtnText">Send SMS</span>
-                    </button>
+            </section>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- STUDENT VIEW -->
+        <!-- ======================================================= -->
+        <div id="student-view" class="hidden space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        My Residence & Campus Status
+                    </h2>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">📍 Dormitory 4 (Suthep)</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded">🎓 Faculty of Engineering</span>
+                    </div>
                 </div>
-            </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Localized Environment -->
+                    <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2">Local Environment</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Outdoor PM2.5</span>
+                                <span class="text-red-600 font-bold">175 µg/m³</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Dorm 4 Indoor AQI</span>
+                                <span class="text-green-600 font-bold">22 µg/m³ (Safe)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Outdoor Temperature</span>
+                                <span class="text-orange-600 font-bold">40°C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Action Plan -->
+                    <div class="bg-blue-50 rounded-lg p-5 border border-blue-100">
+                        <h3 class="font-bold text-blue-900 text-sm uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">Your Action Plan</h3>
+                        <ul class="space-y-3 text-sm text-blue-800">
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">🏀</span> <strong>Intramural Sports:</strong> Cancelled for today. Do not run outdoors.
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">😷</span> <strong>Mask Pickup:</strong> Free N95 masks available at Dorm 4 front desk.
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">📚</span> <strong>Study Areas:</strong> Engineering Library air purifiers are running at full capacity.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- PARENT VIEW -->
+        <!-- ======================================================= -->
+        <div id="parent-view" class="hidden space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        School & Residence Safety Status
+                    </h2>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded">🏫 CMU Demonstration School</span>
+                        <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">📍 Chang Phueak Residence</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- School Status -->
+                    <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2 flex items-center gap-2">
+                            <span>🏫</span> CMU Demonstration School
+                        </h3>
+                        <div class="space-y-3 flex-1">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Indoor Classrooms AQI</span>
+                                <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold">SAFE (25 µg/m³)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Recess / PE Status</span>
+                                <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">MOVED INDOORS</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
+                                All classrooms are sealed and air purifiers are active. Please pick up students directly from the main indoor hall today.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Residence Action -->
+                    <div class="bg-orange-50 rounded-lg p-5 border border-orange-100 flex flex-col">
+                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines (Chang Phueak)</h3>
+                        <div class="flex items-start gap-3 flex-1">
+                            <div class="text-orange-600 text-2xl mt-0.5">⚠️</div>
+                            <div>
+                                <p class="text-sm text-orange-800 font-medium">Outdoor levels near your residence are currently HIGH (142 µg/m³).</p>
+                                <ul class="list-disc list-inside mt-3 text-xs text-orange-700 space-y-1.5">
+                                    <li>Keep all windows and doors closed.</li>
+                                    <li>Turn on home air purifiers if available.</li>
+                                    <li>Ensure your child carries their prescribed asthma inhaler.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
 
     </main>
 
+    <!-- AI SMS Modal -->
+    <div id="aiModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span class="text-blue-600">✨</span> AI Message Generation
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            
+            <div class="mb-4 text-sm text-gray-600">
+                Generating contextual SMS warning in Thai for <strong id="modalPatientName" class="text-gray-900"></strong> based on:
+                <ul class="list-disc ml-5 mt-2 text-xs text-gray-500">
+                    <li>Condition: <span id="modalCondition"></span></li>
+                    <li>Environment: <span id="modalEnv"></span></li>
+                </ul>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 relative min-h-[100px]">
+                <!-- Loading State -->
+                <div id="aiLoading" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-2 text-blue-600 text-sm font-medium">
+                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Drafting message...
+                    </div>
+                </div>
+                <!-- Result text -->
+                <textarea id="aiResult" class="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-800 hidden" rows="4"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="sendSMS()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Send SMS</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // --- 1. Chart Data & Configuration ---
+        // Initialize with empty defaults, will be populated by FastAPI
+        let labelsWeekly = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        let pmWeekly = [0, 0, 0, 0, 0, 0, 0];
+        let tempWeekly = [0, 0, 0, 0, 0, 0, 0];
+
+        // Highlighting Logic Functions
+        const getPMRadius = (val) => val >= 150 ? 8 : 3;
+        const getPMColor = (val) => val >= 150 ? '#ef4444' : '#3b82f6';
         
-        async function generateAISMS(patientName, location, vulnerability, pmLevel) {
-            const modal = document.getElementById('aiSmsModal');
-            const textArea = document.getElementById('aiSmsTextarea');
-            const sendBtn = document.getElementById('aiSmsSendBtn');
-            const statusContainer = document.getElementById('aiSmsStatus');
-            const statusSpinner = document.getElementById('statusSpinner');
-            const statusTextContent = document.getElementById('statusTextContent');
-            const recipientName = document.getElementById('aiSmsRecipient');
+        const getTempRadius = (val) => val >= 38 ? 8 : 3;
+        const getTempColor = (val) => val >= 38 ? '#f97316' : '#94a3b8';
 
-            // Reset and Show Modal
-            recipientName.innerText = patientName;
-            textArea.value = '';
+        const ctx = document.getElementById('envChart').getContext('2d');
+        const envChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsWeekly,
+                datasets: [
+                    {
+                        label: 'PM2.5 (µg/m³)',
+                        data: pmWeekly,
+                        borderColor: '#3b82f6',
+                        backgroundColor: '#3b82f6',
+                        borderWidth: 2,
+                        yAxisID: 'y',
+                        fill: false, // Clean line without shading
+                        tension: 0.4,
+                        // Dynamic styling for extreme PM points
+                        pointRadius: pmWeekly.map(getPMRadius),
+                        pointHoverRadius: pmWeekly.map(val => getPMRadius(val) + 2),
+                        pointBackgroundColor: pmWeekly.map(getPMColor),
+                        pointBorderColor: pmWeekly.map(val => val >= 150 ? '#ef4444' : '#ffffff'),
+                        pointBorderWidth: pmWeekly.map(val => val >= 150 ? 2 : 1),
+                    },
+                    {
+                        label: 'Avg Temperature (°C)',
+                        data: tempWeekly,
+                        borderColor: '#94a3b8',
+                        backgroundColor: '#94a3b8',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        yAxisID: 'y1',
+                        fill: false,
+                        tension: 0.4,
+                        // Dynamic styling for extreme Heat points
+                        pointRadius: tempWeekly.map(getTempRadius),
+                        pointHoverRadius: tempWeekly.map(val => getTempRadius(val) + 2),
+                        pointBackgroundColor: tempWeekly.map(getTempColor),
+                        pointBorderColor: tempWeekly.map(val => val >= 38 ? '#f97316' : '#ffffff'),
+                        pointBorderWidth: tempWeekly.map(val => val >= 38 ? 2 : 1),
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 13 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                    // Add warning text in tooltip if critical
+                                    if (context.datasetIndex === 0 && context.parsed.y >= 150) {
+                                        label += ' ⚠️ CRITICAL';
+                                    }
+                                    if (context.datasetIndex === 1 && context.parsed.y >= 38) {
+                                        label += ' ⚠️ EXTREME HEAT';
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'PM2.5 (µg/m³)' },
+                        suggestedMax: 200
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Temperature (°C)' },
+                        suggestedMin: 20,
+                        suggestedMax: 45,
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+
+        // --- 2. Toggle Logic ---
+        const btnDaily = document.getElementById('btn-daily');
+        const btnWeekly = document.getElementById('btn-weekly');
+
+        let locationHierarchy = {};
+
+        function getMockHierarchy() {
+            return {
+                "Chiang Mai": {
+                    "Mueang Chiang Mai": ["Suthep", "Chang Phueak", "Sri Phum", "Pa Daet", "Mae Hia"],
+                    "Mae Rim": ["Mae Sa", "Rim Tai", "Pong Yaeng"],
+                    "Hang Dong": ["Hang Dong", "San Phak Wan", "Nam Phrae"],
+                    "San Sai": ["San Sai Luang", "San Pa Pao", "Nong Han"]
+                },
+                "Lampang": {
+                    "Mueang Lampang": ["Phra Bat", "Hua Wiang", "Phichai", "Chomphu", "Pong Saen Thong"],
+                    "Ko Kha": ["Ko Kha", "Sala", "Na Kaeo"],
+                    "Hang Chat": ["Hang Chat", "Pong Yang Khok"]
+                }
+            };
+        }
+
+        async function fetchLocationHierarchy() {
+            if (window.location.protocol === 'blob:' || window.location.protocol === 'data:' || window.location.protocol === 'file:') {
+                console.info("Preview mode: Using fallback mock location hierarchy.");
+                return getMockHierarchy();
+            }
+            try {
+                const response = await fetch('/api/locations');
+                if (!response.ok) throw new Error("Failed to fetch locations");
+                return await response.json();
+            } catch (error) {
+                console.warn("Failed to load locations from API, using fallback", error);
+                return getMockHierarchy();
+            }
+        }
+
+        async function initLocationDropdowns() {
+            locationHierarchy = await fetchLocationHierarchy();
+            const provSelect = document.getElementById('province-select');
             
-            statusSpinner.classList.remove('hidden');
-            statusTextContent.innerText = 'Drafting...';
-            statusContainer.classList.remove('hidden', 'text-red-500');
-            statusContainer.classList.add('text-purple-600');
+            // Populate Provinces
+            provSelect.innerHTML = '';
+            for (const prov in locationHierarchy) {
+                provSelect.innerHTML += `<option value="${prov}">${prov}</option>`;
+            }
             
-            textArea.disabled = true;
-            sendBtn.disabled = true;
-            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            updateLocationDropdowns('province');
+        }
+
+        function updateLocationDropdowns(trigger) {
+            const provSelect = document.getElementById('province-select');
+            const amphoeSelect = document.getElementById('amphoe-select');
+            const tambonSelect = document.getElementById('location-select');
+            
+            const selectedProv = provSelect.value;
+            const amphoes = locationHierarchy[selectedProv];
+
+            if (trigger === 'province') {
+                // Province changed, update Amphoes
+                amphoeSelect.innerHTML = '<option value="All Amphoe">All Amphoe</option>';
+                for (const amphoe in amphoes) {
+                    amphoeSelect.innerHTML += `<option value="${amphoe}">${amphoe.replace('Mueang ', 'Mueang ')}</option>`;
+                }
+            }
+
+            const selectedAmphoe = amphoeSelect.value;
+            
+            if (trigger === 'province' || trigger === 'amphoe') {
+                // Province or Amphoe changed, update Tambons
+                tambonSelect.innerHTML = '<option value="All Tambon">All Tambon</option>';
+                
+                if (selectedAmphoe !== 'All Amphoe') {
+                    const tambons = amphoes[selectedAmphoe];
+                    for (const tambon of tambons) {
+                        tambonSelect.innerHTML += `<option value="${tambon}">${tambon}</option>`;
+                    }
+                }
+                
+                // Fetch data for the new default tambon/amphoe
+                fetchDashboardData();
+            }
+        }
+
+        // --- Role Switching Logic ---
+        function switchRole(role) {
+            const providerView = document.getElementById('provider-view');
+            const adminView = document.getElementById('admin-view');
+            const studentView = document.getElementById('student-view');
+            const parentView = document.getElementById('parent-view');
+            const roleBadge = document.getElementById('roleBadge');
+            
+            // Define badge styling
+            const badges = {
+                'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
+                'admin': { text: 'Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
+                'student': { text: 'Student View', class: 'text-green-800 bg-green-100 border-green-200' },
+                'parent': { text: 'Parent View', class: 'text-orange-800 bg-orange-100 border-orange-200' }
+            };
+
+            // Update badge UI
+            roleBadge.innerText = badges[role].text;
+            roleBadge.className = `text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${badges[role].class}`;
+
+            // Hide all views first to reset state
+            providerView.classList.add('hidden');
+            adminView.classList.add('hidden');
+            studentView.classList.add('hidden');
+            parentView.classList.add('hidden');
+
+            // Show selected view
+            if (role === 'provider') {
+                providerView.classList.remove('hidden');
+            } else if (role === 'admin') {
+                adminView.classList.remove('hidden');
+            } else if (role === 'student') {
+                studentView.classList.remove('hidden');
+            } else if (role === 'parent') {
+                parentView.classList.remove('hidden');
+            }
+        }
+
+        // --- 3. API Integration Logic (FastAPI) ---
+        let currentMode = 'daily'; // Track state
+
+        btnDaily.addEventListener('click', () => {
+            currentMode = 'daily';
+            
+            // Update button styles to show Daily is active
+            btnDaily.classList.add('text-blue-700', 'bg-blue-50');
+            btnDaily.classList.remove('text-gray-900', 'bg-white');
+            btnWeekly.classList.add('text-gray-900', 'bg-white');
+            btnWeekly.classList.remove('text-blue-700', 'bg-blue-50');
+            
+            fetchDashboardData(); 
+        });
+
+        btnWeekly.addEventListener('click', () => {
+            currentMode = 'weekly';
+            
+            // Update button styles to show Weekly is active
+            btnWeekly.classList.add('text-blue-700', 'bg-blue-50');
+            btnWeekly.classList.remove('text-gray-900', 'bg-white');
+            btnDaily.classList.add('text-gray-900', 'bg-white');
+            btnDaily.classList.remove('text-blue-700', 'bg-blue-50');
+            
+            fetchDashboardData(); 
+        });
+
+        // --- UI Rendering Function ---
+        function updateDashboardUI(data) {
+            // 1. Update Chart Data
+            envChart.data.labels = data.environment.labels;
+            envChart.data.datasets[0].data = data.environment.pm25;
+            envChart.data.datasets[1].data = data.environment.temperature;
+            
+            // 2. Update dynamic styling for extreme points
+            envChart.data.datasets[0].pointRadius = data.environment.pm25.map(getPMRadius);
+            envChart.data.datasets[0].pointHoverRadius = data.environment.pm25.map(val => getPMRadius(val) + 2);
+            envChart.data.datasets[0].pointBackgroundColor = data.environment.pm25.map(getPMColor);
+            envChart.data.datasets[0].pointBorderColor = data.environment.pm25.map(val => val >= 150 ? '#ef4444' : '#ffffff');
+            envChart.data.datasets[0].pointBorderWidth = data.environment.pm25.map(val => val >= 150 ? 2 : 1);
+            
+            envChart.data.datasets[1].pointRadius = data.environment.temperature.map(getTempRadius);
+            envChart.data.datasets[1].pointHoverRadius = data.environment.temperature.map(val => getTempRadius(val) + 2);
+            envChart.data.datasets[1].pointBackgroundColor = data.environment.temperature.map(getTempColor);
+            envChart.data.datasets[1].pointBorderColor = data.environment.temperature.map(val => val >= 38 ? '#f97316' : '#ffffff');
+            envChart.data.datasets[1].pointBorderWidth = data.environment.temperature.map(val => val >= 38 ? 2 : 1);
+            
+            envChart.update();
+
+            // 3. Update Cohort Counters
+            document.getElementById('total-risk-count').innerText = `${data.cohorts.total_risk_count} Patients at Risk`;
+            document.getElementById('air-cohort-count').innerText = data.cohorts.air_risk_count;
+            document.getElementById('thermal-cohort-count').innerText = data.cohorts.thermal_risk_count;
+            document.getElementById('combined-cohort-count').innerText = data.cohorts.combined_risk_count;
+
+            // 4. Update Patient Table
+            const tbody = document.getElementById('patient-table-body');
+            tbody.innerHTML = ''; // clear table
+            
+            if (data.patients.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No high-risk patients meet criteria for this area/period.</td></tr>';
+                return;
+            }
+
+            data.patients.forEach(p => {
+                let riskBadge = '';
+                if (p.risk_type === 'COMBINED') riskBadge = `<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold border border-purple-200 shadow-sm">CRITICAL</span>`;
+                else if (p.risk_type === 'AIR') riskBadge = `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold border border-red-200 shadow-sm">AIR (PM2.5)</span>`;
+                else if (p.risk_type === 'THERMAL') riskBadge = `<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-bold border border-orange-200 shadow-sm">THERMAL</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-gray-900">${p.name_masked}</div>
+                            <div class="text-xs text-gray-500">ID: ${p.patient_id}</div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">${p.tambon}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1 items-start">
+                                ${riskBadge}
+                                <span class="text-xs text-gray-500">${p.env_details}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 text-xs">${p.flags}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="openModal('${p.name_masked}', '${p.flags}', '${p.env_details}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center justify-end gap-1 ml-auto bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 transition">
+                                <span>💬</span> SMS Alert
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- Mock Data Generator (Used in Preview or if API fails) ---
+        function loadMockFallback(prov, amphoe, tambon, mode = 'daily') {
+            const startDate = new Date(document.getElementById('start-date').value);
+            const endDate = new Date(document.getElementById('end-date').value);
+            const diffDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+            
+            let labels = [];
+            let pm25 = [];
+            let temperature = [];
+            
+            // Build synthetic data arrays based on time window
+            if (mode === 'weekly' && diffDays >= 7) {
+                let current = new Date(startDate);
+                while (current <= endDate) {
+                    labels.push(current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    pm25.push(Math.floor(Math.random() * 80) + 60); // 60-140 range
+                    temperature.push(Math.round((Math.random() * 8 + 30) * 10) / 10); 
+                    current.setDate(current.getDate() + 7);
+                }
+            } else if (diffDays === 0) {
+                // Hourly view
+                for (let i = 0; i < 24; i++) {
+                    labels.push(`${i.toString().padStart(2, '0')}:00`);
+                    pm25.push(Math.floor(Math.random() * 60) + 40);
+                    let temp = 28 + (10 * Math.sin((i - 6) * Math.PI / 12)); // Temp curve peaking in afternoon
+                    temperature.push(Math.round(temp * 10) / 10);
+                }
+            } else {
+                // Daily view
+                let current = new Date(startDate);
+                while (current <= endDate) {
+                    labels.push(current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    pm25.push(Math.floor(Math.random() * 120) + 50); 
+                    temperature.push(Math.round((Math.random() * 12 + 28) * 10) / 10); 
+                    current.setDate(current.getDate() + 1);
+                }
+            }
+
+            // Calculate mock cohorts based on generated chart data
+            const max_pm = Math.max(...pm25);
+            const max_temp = Math.max(...temperature);
+
+            const mockData = {
+                environment: { labels, pm25, temperature },
+                cohorts: {
+                    air_risk_count: max_pm >= 150 ? 42 : 0,
+                    thermal_risk_count: max_temp >= 38 ? 15 : 0,
+                    combined_risk_count: (max_pm >= 150 && max_temp >= 38) ? 8 : 0,
+                    total_risk_count: (max_pm >= 150 ? 42 : 0) + (max_temp >= 38 ? 15 : 0) + ((max_pm >= 150 && max_temp >= 38) ? 8 : 0)
+                },
+                patients: []
+            };
+
+            // Add mock patients if limits are breached
+            if (max_pm >= 150 || max_temp >= 38) {
+                mockData.patients.push({
+                    name_masked: "Mock Patient A.", patient_id: "CM-MOCK1", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: (max_pm >= 150 && max_temp >= 38) ? "COMBINED" : (max_pm >= 150 ? "AIR" : "THERMAL"),
+                    env_details: `PM2.5: ${Math.floor(max_pm)} | Temp: ${max_temp}°C`,
+                    flags: "COPD, Age > 65"
+                });
+                mockData.patients.push({
+                    name_masked: "Mock Patient B.", patient_id: "CM-MOCK2", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: (max_temp >= 38) ? "THERMAL" : "AIR",
+                    env_details: "Extreme values present",
+                    flags: "CVD, Bedridden"
+                });
+            }
+
+            // Render the UI
+            updateDashboardUI(mockData);
+        }
+
+        async function fetchDashboardData() {
+            const prov = document.getElementById('province-select').value;
+            const amphoe = document.getElementById('amphoe-select').value;
+            const tambon = document.getElementById('location-select').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+
+            // 1. Check if running in a preview/blob environment where relative paths fail
+            if (window.location.protocol === 'blob:' || window.location.protocol === 'data:' || window.location.protocol === 'file:') {
+                console.info("Running in preview mode. Loading mock data...");
+                loadMockFallback(prov, amphoe, tambon, currentMode);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/data?province=${prov}&amphoe=${amphoe}&tambon=${tambon}&start_date=${startDate}&end_date=${endDate}&mode=${currentMode}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.warn("Backend returned error:", data.error);
+                    loadMockFallback(prov, amphoe, tambon);
+                    return;
+                }
+
+                updateDashboardUI(data);
+
+            } catch (error) {
+                // Handle fallback with the new mode
+                loadMockFallback(prov, amphoe, tambon, currentMode);
+            }
+        }
+
+        // Initialize dashboard data on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initLocationDropdowns(); // This will trigger fetchDashboardData internally
+        });
+
+        // --- 4. AI Modal Logic ---
+        async function openModal(patient, condition, env) {
+            document.getElementById('modalPatientName').innerText = patient;
+            document.getElementById('modalCondition').innerText = condition;
+            document.getElementById('modalEnv').innerText = env;
+            
+            const modal = document.getElementById('aiModal');
+            const loading = document.getElementById('aiLoading');
+            const result = document.getElementById('aiResult');
+            
             modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            result.value = "";
 
-            const systemPrompt = "You are an empathetic, professional public health assistant working in Chiang Mai, Thailand. Your task is to draft short SMS text messages directly to vulnerable patients during air pollution crises.";
-            const userQuery = `Write a short SMS text message (maximum 2 sentences) in natural Thai language directed to a patient named ${patientName}. They live in ${location} where the PM2.5 level is currently ${pmLevel} µg/m³ (Unhealthy). They are vulnerable because of: ${vulnerability}. Advise them to stay indoors, avoid outdoor exercise, and keep their medications nearby. Keep it very polite, caring, actionable, and concise.`;
-
-            const apiKey = ""; // API key will be injected automatically
+            const apiKey = ""; // Canvas will automatically provide the API key at runtime
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
+            const systemPrompt = "You are a helpful AI assistant for a local health clinic in Chiang Mai, Thailand. Your task is to write a short, empathetic, and urgent SMS warning in Thai to a vulnerable patient. Advise them on what precautions to take based on their specific health conditions and the current environmental factors. Keep it under 250 characters.";
+            const userPrompt = `Patient Name: ${patient}\nHealth Conditions: ${condition}\nEnvironmental Risk: ${env}\n\nPlease generate the Thai SMS.`;
+
             const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 150,
+                }
             };
 
             try {
@@ -460,825 +1063,41 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-                const candidate = result.candidates && result.candidates[0];
+                const data = await response.json();
+                const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "ขออภัย ไม่สามารถสร้างข้อความได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
 
-                if (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) {
-                    textArea.value = candidate.content.parts[0].text.replace(/"/g, '').trim();
-                    statusContainer.classList.add('hidden');
-                    textArea.disabled = false;
-                    sendBtn.disabled = false;
-                    sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    throw new Error("Invalid response format");
-                }
+                loading.classList.add('hidden');
+                result.classList.remove('hidden');
+                result.value = generatedText.trim();
             } catch (error) {
-                console.error("Gemini API Error:", error);
-                statusSpinner.classList.add('hidden');
-                statusTextContent.innerText = '⚠️ Error connecting to AI.';
-                statusContainer.classList.replace('text-purple-600', 'text-red-500');
-                statusContainer.classList.remove('animate-pulse');
-                textArea.disabled = false;
+                console.error("Error generating SMS:", error);
+                loading.classList.add('hidden');
+                result.classList.remove('hidden');
+                result.value = "Error connecting to AI service. Please type your message manually.";
             }
         }
 
-        function closeAISMSModal() {
-            document.getElementById('aiSmsModal').classList.add('hidden');
+        function closeModal() {
+            document.getElementById('aiModal').classList.add('hidden');
         }
 
-        function sendAISMS() {
-            const btn = document.getElementById('aiSmsSendBtn');
-            const iconDefault = document.getElementById('sendIconDefault');
-            const iconSuccess = document.getElementById('sendIconSuccess');
-            const btnText = document.getElementById('sendBtnText');
-            
-            // Visual feedback for sending
-            iconDefault.classList.add('hidden');
-            iconSuccess.classList.remove('hidden');
-            btnText.innerText = 'Sent successfully!';
-            
-            btn.classList.replace('bg-blue-600', 'bg-green-600');
-            btn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
-            
-            setTimeout(() => {
-                closeAISMSModal();
+        function sendSMS() {
+            const btn = document.querySelector('#aiModal button.bg-green-600');
+            if (btn) {
+                const originalText = btn.innerText;
+                btn.innerText = "Sent!";
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-green-800');
                 setTimeout(() => {
-                    // Reset button state
-                    iconSuccess.classList.add('hidden');
-                    iconDefault.classList.remove('hidden');
-                    btnText.innerText = 'Send SMS';
-                    
-                    btn.classList.replace('bg-green-600', 'bg-blue-600');
-                    btn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
-                }, 300);
-            }, 1200);
-        }
-    </script>
-
-    <script>
-        const APP_VERSION = "v7-or-filter-2026-05-19";
-        const API_BASE = window.location.protocol.startsWith("http") ? window.location.origin : "http://127.0.0.1:8000";
-        console.log("CMU LHS UI", APP_VERSION, "API_BASE=", API_BASE);
-
-        let pmTrendChart = null;
-        let currentTrendMode = "daily";
-
-        function textValue(value, fallback = "-") {
-            if (value === null || value === undefined || value === "") return fallback;
-            return String(value);
-        }
-
-        function escapeHtml(value) {
-            return textValue(value)
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function toBool(value) {
-            if (value === true || value === 1) return true;
-            if (typeof value === "number") return value === 1;
-            return ["true", "1", "yes", "y", "ใช่"].includes(String(value || "").trim().toLowerCase());
-        }
-
-        async function fetchJson(url) {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return await response.json();
-        }
-
-        function getDateRange() {
-            return {
-                startDate: document.getElementById("startDateInput")?.value || "",
-                endDate: document.getElementById("endDateInput")?.value || "",
-            };
-        }
-
-        function filterByDateRange(rows, dateColumn = "date") {
-            const { startDate, endDate } = getDateRange();
-
-            return rows.filter(row => {
-                const rowDate = String(row[dateColumn] || "").slice(0, 10);
-                if (!rowDate) return false;
-                if (startDate && rowDate < startDate) return false;
-                if (endDate && rowDate > endDate) return false;
-                return true;
-            });
-        }
-
-        function setTrendButtonState(mode) {
-            const btnDaily = document.getElementById("btnDaily");
-            const btnWeekly = document.getElementById("btnWeekly");
-
-            if (!btnDaily || !btnWeekly) return;
-
-            if (mode === "daily") {
-                btnDaily.className = "px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
-                btnWeekly.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition";
+                    closeModal();
+                    btn.innerText = originalText;
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.remove('bg-green-800');
+                }, 1000);
             } else {
-                btnWeekly.className = "px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
-                btnDaily.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700 transition";
+                closeModal();
             }
         }
-
-        function getWeekKey(dateString) {
-            const date = new Date(`${dateString}T00:00:00`);
-            if (Number.isNaN(date.getTime())) return "Unknown";
-
-            const firstDay = new Date(date.getFullYear(), 0, 1);
-            const pastDays = Math.floor((date - firstDay) / 86400000);
-            const weekNumber = Math.ceil((pastDays + firstDay.getDay() + 1) / 7);
-            return `${date.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
-        }
-
-        function aggregateWeekly(rows) {
-            const grouped = {};
-
-            rows.forEach(row => {
-                const key = getWeekKey(row.date);
-                if (!grouped[key]) {
-                    grouped[key] = { pm25: 0, temp: 0, count: 0 };
-                }
-                grouped[key].pm25 += Number(row.pm25_avg || 0);
-                grouped[key].temp += Number(row.temperature_avg || 0);
-                grouped[key].count += 1;
-            });
-
-            return Object.keys(grouped).sort().map(key => ({
-                date: key,
-                pm25_avg: grouped[key].count ? grouped[key].pm25 / grouped[key].count : 0,
-                temperature_avg: grouped[key].count ? grouped[key].temp / grouped[key].count : 0,
-            }));
-        }
-
-        function renderTrendChart(labels, pm25, temp) {
-            const canvas = document.getElementById("pmTrendChart");
-            if (!canvas) return;
-
-            if (pmTrendChart) {
-                pmTrendChart.destroy();
-            }
-
-            pmTrendChart = new Chart(canvas.getContext("2d"), {
-                type: "line",
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: "PM2.5 (µg/m³)",
-                            data: pm25,
-                            borderColor: "#ef4444",
-                            backgroundColor: "rgba(239, 68, 68, 0.1)",
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: "y",
-                            pointRadius: context => Number(context.raw) >= 150 ? 7 : 3,
-                            pointBackgroundColor: context => Number(context.raw) >= 150 ? "#b91c1c" : "#ef4444",
-                            pointBorderColor: context => Number(context.raw) >= 150 ? "#fee2e2" : "#ffffff",
-                            pointBorderWidth: context => Number(context.raw) >= 150 ? 3 : 1,
-                        },
-                        {
-                            label: "Temperature (°C)",
-                            data: temp,
-                            borderColor: "#f59e0b",
-                            backgroundColor: "#f59e0b",
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: "y1",
-                            pointRadius: context => Number(context.raw) >= 38 ? 7 : 3,
-                            pointBackgroundColor: context => Number(context.raw) >= 38 ? "#c2410c" : "#f59e0b",
-                            pointBorderColor: context => Number(context.raw) >= 38 ? "#ffedd5" : "#ffffff",
-                            pointBorderWidth: context => Number(context.raw) >= 38 ? 3 : 1,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: "index", intersect: false },
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: { usePointStyle: true, boxWidth: 6 },
-                        },
-                    },
-                    scales: {
-                        y: {
-                            type: "linear",
-                            display: true,
-                            position: "left",
-                            title: { display: true, text: "PM2.5 (µg/m³)" },
-                            grid: { color: "#f1f5f9" },
-                        },
-                        y1: {
-                            type: "linear",
-                            display: true,
-                            position: "right",
-                            title: { display: true, text: "Temp (°C)" },
-                            grid: { drawOnChartArea: false },
-                        },
-                    },
-                },
-            });
-        }
-
-        function getSelectedLocation() {
-            const provinceSelect = document.getElementById("provinceSelect");
-            const amphoeSelect = document.getElementById("amphoeSelect");
-            const tambonSelect = document.getElementById("tambonSelect");
-
-            return {
-                province: provinceSelect?.value || "all",
-                amphoe: amphoeSelect?.value || "all",
-                tambon: tambonSelect?.value || "all",
-                provinceText: provinceSelect?.selectedOptions?.[0]?.textContent || "ทุกจังหวัด",
-                amphoeText: amphoeSelect?.selectedOptions?.[0]?.textContent || "ทุกอำเภอ",
-                tambonText: tambonSelect?.selectedOptions?.[0]?.textContent || "ทุกตำบล",
-            };
-        }
-
-        function appendLocationParams(url) {
-            const selected = getSelectedLocation();
-
-            if (selected.province && selected.province !== "all") {
-                url += `&province=${encodeURIComponent(selected.province)}`;
-            }
-
-            if (selected.amphoe && selected.amphoe !== "all") {
-                url += `&amphoe=${encodeURIComponent(selected.amphoe)}`;
-            }
-
-            if (selected.tambon && selected.tambon !== "all") {
-                url += `&tambon=${encodeURIComponent(selected.tambon)}`;
-            }
-
-            return url;
-        }
-
-        function updateLocationSelectionText() {
-            const selected = getSelectedLocation();
-            const box = document.getElementById("locationSelectionText");
-
-            if (!box) return;
-
-            box.textContent = `${selected.provinceText} / ${selected.amphoeText} / ${selected.tambonText}`;
-        }
-
-        function setSelectLoading(selectElement, text) {
-            if (!selectElement) return;
-            selectElement.innerHTML = `<option value="all">${text}</option>`;
-        }
-
-        async function fillSelectFromApi(selectId, url, responseKey, defaultText) {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-
-            setSelectLoading(select, "กำลังโหลด...");
-
-            try {
-                const data = await fetchJson(url);
-                const items = data[responseKey] || [];
-
-                select.innerHTML = `<option value="all" selected>${defaultText}</option>`;
-
-                items.forEach(item => {
-                    const option = document.createElement("option");
-                    option.value = item;
-                    option.textContent = item;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error(`Load ${selectId} error:`, error);
-                select.innerHTML = `<option value="all" selected>${defaultText}</option>`;
-            }
-        }
-
-        async function loadProvinces() {
-            await fillSelectFromApi(
-                "provinceSelect",
-                `${API_BASE}/provinces`,
-                "provinces",
-                "ทุกจังหวัด"
-            );
-
-            await loadAmphoes();
-            await loadTambons();
-            updateLocationSelectionText();
-        }
-
-        async function loadAmphoes() {
-            const selected = getSelectedLocation();
-            const params = new URLSearchParams();
-
-            if (selected.province && selected.province !== "all") {
-                params.set("province", selected.province);
-            }
-
-            await fillSelectFromApi(
-                "amphoeSelect",
-                `${API_BASE}/amphoes?${params.toString()}`,
-                "amphoes",
-                "ทุกอำเภอ"
-            );
-
-            const tambonSelect = document.getElementById("tambonSelect");
-            if (tambonSelect) {
-                tambonSelect.innerHTML = `<option value="all" selected>ทุกตำบล</option>`;
-            }
-
-            updateLocationSelectionText();
-        }
-
-        async function loadTambons() {
-            const selected = getSelectedLocation();
-            const params = new URLSearchParams();
-
-            if (selected.province && selected.province !== "all") {
-                params.set("province", selected.province);
-            }
-
-            if (selected.amphoe && selected.amphoe !== "all") {
-                params.set("amphoe", selected.amphoe);
-            }
-
-            await fillSelectFromApi(
-                "tambonSelect",
-                `${API_BASE}/tambons?${params.toString()}`,
-                "tambons",
-                "ทุกตำบล"
-            );
-
-            updateLocationSelectionText();
-        }
-
-        function buildTrendUrl() {
-            const { startDate, endDate } = getDateRange();
-
-            let url = `${API_BASE}/trend/pm25?mode=daily`;
-
-            if (startDate) {
-                url += `&start_date=${encodeURIComponent(startDate)}`;
-            }
-
-            if (endDate) {
-                url += `&end_date=${encodeURIComponent(endDate)}`;
-            }
-
-            url = appendLocationParams(url);
-            return url;
-        }
-
-        async function loadTrendChart() {
-            const subtitle = document.getElementById("chartSubtitle");
-
-            try {
-                let rows = await fetchJson(buildTrendUrl());
-                rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
-
-                if (currentTrendMode === "weekly") {
-                    rows = aggregateWeekly(rows);
-                    if (subtitle) subtitle.innerText = "Reading concentration weekly average (µg/m³) and Temperature (°C)";
-                } else {
-                    if (subtitle) subtitle.innerText = "Reading concentration daily average (µg/m³) and Temperature (°C)";
-                }
-
-                if (!rows.length) {
-                    renderTrendChart([], [], []);
-                    if (subtitle) subtitle.innerText = "ไม่พบข้อมูลในช่วงวันที่/พื้นที่ที่เลือก ลองเลือกพื้นที่หรือวันที่ใหม่";
-                    return;
-                }
-
-                const labels = rows.map(row => String(row.date));
-                const pm25 = rows.map(row => Number(Number(row.pm25_avg || 0).toFixed(2)));
-                const temp = rows.map(row => Number(Number(row.temperature_avg || 0).toFixed(2)));
-
-                renderTrendChart(labels, pm25, temp);
-            } catch (error) {
-                console.error("Load trend chart error:", error);
-                if (subtitle) subtitle.innerText = `โหลดข้อมูลกราฟไม่สำเร็จ: ${error.message}`;
-            }
-        }
-
-        async function loadDashboardSummary() {
-            try {
-                const summary = await fetchJson(`${API_BASE}/dashboard/summary`);
-                updatePatientCountText(summary.critical_risk_count || 0, "Critical Patients");
-            } catch (error) {
-                console.error("Load summary error:", error);
-            }
-        }
-
-        function buildPatientsUrl(limit = 200) {
-            let url = `${API_BASE}/patients?limit=${limit}`;
-            url = appendLocationParams(url);
-
-            // Do not send vulnerability checkbox filters to FastAPI here.
-            // FastAPI query parameters are interpreted like AND.
-            // For this public-health dashboard, selected vulnerabilities should work as OR,
-            // so we fetch patients by location first and apply OR filtering in the browser.
-            return url;
-        }
-
-        async function fetchPatients(limit = 200) {
-            return await fetchJson(buildPatientsUrl(limit));
-        }
-
-        function getSelectedVulnerabilityFilters() {
-            return {
-                ageOver65: document.getElementById("filter_age_over_65")?.checked || false,
-                ageUnder5: document.getElementById("filter_age_under_5")?.checked || false,
-                pregnant: document.getElementById("filter_pregnant")?.checked || false,
-                bedridden: document.getElementById("filter_bedridden")?.checked || false,
-                outdoorWorker: document.getElementById("filter_outdoor_worker")?.checked || false,
-                copd: document.getElementById("filter_copd")?.checked || false,
-                asthma: document.getElementById("filter_asthma")?.checked || false,
-                cardiovascularDisease: document.getElementById("filter_cardiovascular_disease")?.checked || false,
-                diabetes: document.getElementById("filter_diabetes")?.checked || false,
-                ckd: document.getElementById("filter_ckd")?.checked || false,
-                hypertension: document.getElementById("filter_hypertension")?.checked || false,
-                lungCancer: document.getElementById("filter_lung_cancer")?.checked || false,
-                postCovid: document.getElementById("filter_post_covid")?.checked || false,
-            };
-        }
-
-        function getMatchedVulnerabilityItems(patient, selected = null) {
-            const allChecks = [
-                { key: "ageOver65", label: `Age ${patient.age || "65+"}`, matched: toBool(patient.age_over_65) || Number(patient.age) >= 65 },
-                { key: "ageUnder5", label: `Age ${patient.age || "<5"}`, matched: toBool(patient.age_under_5) || Number(patient.age) < 5 },
-                { key: "pregnant", label: "Pregnant", matched: toBool(patient.pregnant) },
-                { key: "bedridden", label: "Bedridden", matched: toBool(patient.bedridden_immobile) },
-                { key: "outdoorWorker", label: "Outdoor worker", matched: toBool(patient.outdoor_worker) },
-                { key: "copd", label: "COPD", matched: toBool(patient.copd) },
-                { key: "asthma", label: "Asthma", matched: toBool(patient.asthma) },
-                { key: "cardiovascularDisease", label: "CVD", matched: toBool(patient.cardiovascular_disease) },
-                { key: "diabetes", label: "Diabetes", matched: toBool(patient.diabetes) },
-                { key: "ckd", label: "CKD", matched: toBool(patient.ckd) },
-                { key: "hypertension", label: "HT", matched: toBool(patient.hypertension) },
-                { key: "lungCancer", label: "Lung cancer", matched: toBool(patient.lung_cancer) },
-                { key: "postCovid", label: "Post-Covid", matched: toBool(patient.post_covid) || toBool(patient.post_covid_complications) },
-            ];
-
-            if (selected && Object.values(selected).some(Boolean)) {
-                return allChecks.filter(item => selected[item.key] && item.matched).map(item => item.label);
-            }
-
-            return allChecks.filter(item => item.matched).map(item => item.label);
-        }
-
-        function getMatchedVulnerabilityKeys(patient) {
-            const checks = [
-                { key: "ageOver65", matched: toBool(patient.age_over_65) || Number(patient.age) >= 65 },
-                { key: "ageUnder5", matched: toBool(patient.age_under_5) || Number(patient.age) < 5 },
-                { key: "pregnant", matched: toBool(patient.pregnant) },
-                { key: "bedridden", matched: toBool(patient.bedridden_immobile) },
-                { key: "outdoorWorker", matched: toBool(patient.outdoor_worker) },
-                { key: "copd", matched: toBool(patient.copd) },
-                { key: "asthma", matched: toBool(patient.asthma) },
-                { key: "cardiovascularDisease", matched: toBool(patient.cardiovascular_disease) },
-                { key: "diabetes", matched: toBool(patient.diabetes) },
-                { key: "ckd", matched: toBool(patient.ckd) },
-                { key: "hypertension", matched: toBool(patient.hypertension) },
-                { key: "lungCancer", matched: toBool(patient.lung_cancer) },
-                { key: "postCovid", matched: toBool(patient.post_covid) || toBool(patient.post_covid_complications) },
-            ];
-
-            return checks.filter(item => item.matched).map(item => item.key);
-        }
-
-        function patientMatchesSelectedFilters(patient, selected) {
-            const selectedKeys = Object.keys(selected).filter(key => selected[key]);
-            if (!selectedKeys.length) return true;
-
-            // OR checkbox filtering:
-            // A patient is included when they match at least ONE selected vulnerability factor.
-            // Example: Age > 65 + Age < 5 means older adults OR young children.
-            const matchedKeys = getMatchedVulnerabilityKeys(patient);
-            return selectedKeys.some(key => matchedKeys.includes(key));
-        }
-
-        function getRiskRank(riskLevel) {
-            const level = textValue(riskLevel).toUpperCase();
-            if (level === "CRITICAL") return 4;
-            if (level === "HIGH") return 3;
-            if (level === "MEDIUM") return 2;
-            if (level === "LOW") return 1;
-            return 0;
-        }
-
-        function sortPatientsForDisplay(patients, selected) {
-            return [...patients].sort((a, b) => {
-                const matchedDiff = getMatchedVulnerabilityItems(b, selected).length - getMatchedVulnerabilityItems(a, selected).length;
-                if (matchedDiff !== 0) return matchedDiff;
-
-                const riskDiff = getRiskRank(b.final_risk_level) - getRiskRank(a.final_risk_level);
-                if (riskDiff !== 0) return riskDiff;
-
-                const dateA = String(a.last_contact_date || "");
-                const dateB = String(b.last_contact_date || "");
-                return dateB.localeCompare(dateA);
-            });
-        }
-
-        function getRiskColor(riskLevel) {
-            const level = textValue(riskLevel).toUpperCase();
-            if (level === "CRITICAL") return "bg-red-100 text-red-700";
-            if (level === "HIGH") return "bg-orange-100 text-orange-700";
-            if (level === "MEDIUM") return "bg-yellow-100 text-yellow-700";
-            return "bg-green-100 text-green-700";
-        }
-
-        function buildVulnerabilityText(patient, selected = null) {
-            const matchedItems = getMatchedVulnerabilityItems(patient, selected);
-            return matchedItems.length ? matchedItems.join(", ") : "-";
-        }
-
-        function renderPatientError(message) {
-            const tableBody = document.getElementById("patientTableBody");
-            if (!tableBody) return;
-
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-red-500">
-                        โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(message)}<br>
-                        <span class="text-xs text-slate-500">ตรวจสอบว่า FastAPI เปิดอยู่ที่ ${API_BASE}</span>
-                    </td>
-                </tr>
-            `;
-        }
-
-        function renderPatientTable(patients, selected = null) {
-            const tableBody = document.getElementById("patientTableBody");
-            if (!tableBody) return;
-
-            // Force a visible refresh so the table never keeps stale rows after changing checkboxes.
-            tableBody.innerHTML = "";
-
-            if (!patients || !patients.length) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">
-                            ไม่พบผู้ป่วยตามเงื่อนไขที่เลือก
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tableBody.innerHTML = patients.map(patient => {
-                const riskLevel = textValue(patient.final_risk_level, "UNKNOWN").toUpperCase();
-                const riskColor = getRiskColor(riskLevel);
-                const vulnerabilityText = buildVulnerabilityText(patient, selected);
-
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="px-6 py-4">
-                            <div class="font-bold text-slate-800">${escapeHtml(patient.name_masked)}</div>
-                            <div class="text-xs text-slate-400">${escapeHtml(patient.patient_id)}</div>
-                        </td>
-                        <td class="px-6 py-4 text-slate-600">
-                            <div class="font-semibold">${escapeHtml(patient.tambon || "-")}</div>
-                            <div class="text-xs text-slate-400">${escapeHtml(patient.amphoe || "-")} / ${escapeHtml(patient.province || "-")}</div>
-                        </td>
-                        <td class="px-6 py-4 text-slate-600">${escapeHtml(vulnerabilityText)}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold ${riskColor}">${escapeHtml(riskLevel)}</span>
-                        </td>
-                        <td class="px-6 py-4 text-slate-600">${escapeHtml(patient.last_contact_date)}</td>
-                        <td class="px-6 py-4 text-slate-600">${escapeHtml(patient.recommended_intervention)}</td>
-                    </tr>
-                `;
-            }).join("");
-        }
-
-        function updatePatientCountText(count, label = "Patients Identified") {
-            const countBadge = document.getElementById("identifiedPatientsBadge");
-            if (countBadge) countBadge.innerText = `${count} ${label}`;
-
-            const footerText = document.querySelector(".p-6.bg-slate-50.border-t span");
-            if (footerText) footerText.innerText = `Showing ${count} targeted patients`;
-        }
-
-        async function getFilteredPatients(limit = 5000) {
-            const selected = getSelectedVulnerabilityFilters();
-            const patients = await fetchPatients(limit);
-
-            // Apply OR filtering in the browser so multiple vulnerability checkboxes mean
-            // "match any selected risk factor" rather than "must match every factor".
-            return patients.filter(patient => patientMatchesSelectedFilters(patient, selected));
-        }
-
-        async function findPatients() {
-            try {
-                const selected = getSelectedVulnerabilityFilters();
-                const filteredPatients = await getFilteredPatients(5000);
-                const displayPatients = sortPatientsForDisplay(filteredPatients, selected);
-
-                renderPatientTable(displayPatients.slice(0, 200), selected);
-                updatePatientCountText(filteredPatients.length);
-                renderVulnerablePatientCards(displayPatients);
-            } catch (error) {
-                console.error(error);
-                renderPatientError(error.message);
-            }
-        }
-
-
-
-        function buildAreaAlertsUrl(limit = 5000) {
-            const { startDate, endDate } = getDateRange();
-            let url = `${API_BASE}/area-alerts/daily?limit=${limit}`;
-            if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
-            if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
-            url = appendLocationParams(url);
-            return url;
-        }
-
-        function groupAreaAlerts(rows) {
-            const grouped = {};
-            rows.forEach(row => {
-                const key = `${row.province || "-"}|${row.amphoe || "-"}|${row.tambon || "-"}`;
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        province: row.province || "-",
-                        amphoe: row.amphoe || "-",
-                        tambon: row.tambon || "-",
-                        peakPm25: 0,
-                        maxTemp: 0,
-                        minTemp: null,
-                        patientCount: 0,
-                        critical: 0,
-                        high: 0,
-                    };
-                }
-                const item = grouped[key];
-                item.peakPm25 = Math.max(item.peakPm25, Number(row.avg_pm25 || row.pm25_avg || 0));
-                const temp = Number(row.avg_temperature || row.temperature_avg || 0);
-                item.maxTemp = Math.max(item.maxTemp, temp);
-                item.minTemp = item.minTemp === null ? temp : Math.min(item.minTemp, temp);
-                item.patientCount += Number(row.patient_count || 0);
-                item.critical += Number(row.critical_patient_count || 0);
-                item.high += Number(row.high_patient_count || 0);
-            });
-            return Object.values(grouped);
-        }
-
-        async function loadAreaAlertCards() {
-            try {
-                const rows = await fetchJson(buildAreaAlertsUrl());
-                const areas = groupAreaAlerts(rows);
-                const topEnv = [...areas].sort((a, b) => b.peakPm25 - a.peakPm25).slice(0, 3);
-
-                const envCards = document.getElementById("environmentPeakCards");
-                if (envCards) {
-                    envCards.innerHTML = topEnv.length ? topEnv.map(area => `
-                        <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl shadow-sm flex flex-col gap-3">
-                            <div class="flex justify-between items-start border-b border-red-200/50 pb-2">
-                                <span class="text-sm font-bold text-slate-800">${escapeHtml(area.tambon)}</span>
-                            </div>
-                            <div class="flex justify-between items-end">
-                                <div class="flex flex-col">
-                                    <span class="text-[9px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Peak PM2.5</span>
-                                    <div class="flex items-baseline gap-0.5">
-                                        <span class="text-2xl font-black text-red-600 leading-none">${Number(area.peakPm25).toFixed(0)}</span>
-                                        <span class="text-[9px] font-bold text-red-500">µg/m³</span>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col text-right">
-                                    <span class="text-[9px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Temp</span>
-                                    <span class="text-lg font-black text-orange-600 leading-none">${Number(area.maxTemp).toFixed(1)}°C</span>
-                                </div>
-                            </div>
-                            <div class="text-[10px] text-slate-400 font-semibold">${escapeHtml(area.amphoe)} / ${escapeHtml(area.province)}</div>
-                        </div>
-                    `).join("") : `<div class="col-span-3 text-center text-slate-400 py-6">ไม่พบข้อมูลพื้นที่ตามเงื่อนไขที่เลือก</div>`;
-                }
-            } catch (error) {
-                console.error("Load area alert cards error:", error);
-            }
-        }
-
-        function groupPatientsByTambon(patients) {
-            const grouped = {};
-
-            patients.forEach(patient => {
-                const key = `${patient.province || "-"}|${patient.amphoe || "-"}|${patient.tambon || "-"}`;
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        province: patient.province || "-",
-                        amphoe: patient.amphoe || "-",
-                        tambon: patient.tambon || "-",
-                        patientCount: 0,
-                        critical: 0,
-                        high: 0,
-                    };
-                }
-
-                grouped[key].patientCount += 1;
-                const risk = textValue(patient.final_risk_level).toUpperCase();
-                if (risk === "CRITICAL") grouped[key].critical += 1;
-                if (risk === "HIGH") grouped[key].high += 1;
-            });
-
-            return Object.values(grouped);
-        }
-
-        function renderVulnerablePatientCards(patients) {
-            const patientCards = document.getElementById("vulnerablePatientCards");
-            if (!patientCards) return;
-
-            const topPatient = groupPatientsByTambon(patients)
-                .sort((a, b) => {
-                    const riskDiff = (b.critical + b.high) - (a.critical + a.high);
-                    if (riskDiff !== 0) return riskDiff;
-                    return b.patientCount - a.patientCount;
-                })
-                .slice(0, 3);
-
-            patientCards.innerHTML = topPatient.length ? topPatient.map(area => `
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between">
-                    <div>
-                        <span class="text-sm font-bold text-slate-700 block">${escapeHtml(area.tambon)}</span>
-                        <span class="text-[10px] text-slate-400">${escapeHtml(area.amphoe)} / ${escapeHtml(area.province)}</span>
-                        <span class="text-[10px] text-red-500 block mt-1">Critical ${area.critical} · High ${area.high}</span>
-                    </div>
-                    <div class="bg-white border border-slate-200 px-3 py-1 rounded-lg">
-                        <span class="text-lg font-black text-blue-600">${area.patientCount}</span> <span class="text-[10px] text-slate-500 font-bold uppercase">Patients</span>
-                    </div>
-                </div>
-            `).join("") : `<div class="col-span-3 text-center text-slate-400 py-6">ไม่พบผู้ป่วยตาม vulnerability/พื้นที่ที่เลือก</div>`;
-        }
-
-        async function refreshDashboardForSelection() {
-            updateLocationSelectionText();
-            await loadTrendChart();
-            await loadAreaAlertCards();
-            await findPatients();
-        }
-
-        function setupEventListeners() {
-            const findPatientsBtn = document.getElementById("findPatientsBtn");
-            const updateDashboardBtn = document.getElementById("updateDashboardBtn");
-            const provinceSelect = document.getElementById("provinceSelect");
-            const amphoeSelect = document.getElementById("amphoeSelect");
-            const tambonSelect = document.getElementById("tambonSelect");
-            const startDateInput = document.getElementById("startDateInput");
-            const endDateInput = document.getElementById("endDateInput");
-            const btnDaily = document.getElementById("btnDaily");
-            const btnWeekly = document.getElementById("btnWeekly");
-            const vulnerabilityFilters = document.querySelectorAll(".vulnerability-filter");
-
-            findPatientsBtn?.addEventListener("click", findPatients);
-            vulnerabilityFilters.forEach(input => input.addEventListener("change", findPatients));
-            updateDashboardBtn?.addEventListener("click", refreshDashboardForSelection);
-
-            provinceSelect?.addEventListener("change", async () => {
-                await loadAmphoes();
-                await loadTambons();
-                await refreshDashboardForSelection();
-            });
-
-            amphoeSelect?.addEventListener("change", async () => {
-                await loadTambons();
-                await refreshDashboardForSelection();
-            });
-
-            tambonSelect?.addEventListener("change", refreshDashboardForSelection);
-
-            startDateInput?.addEventListener("change", refreshDashboardForSelection);
-            endDateInput?.addEventListener("change", refreshDashboardForSelection);
-
-            btnDaily?.addEventListener("click", async () => {
-                currentTrendMode = "daily";
-                setTrendButtonState("daily");
-                await loadTrendChart();
-            });
-
-            btnWeekly?.addEventListener("click", async () => {
-                currentTrendMode = "weekly";
-                setTrendButtonState("weekly");
-                await loadTrendChart();
-            });
-        }
-
-        async function loadDashboardData() {
-            await loadProvinces();
-            await loadDashboardSummary();
-            await loadTrendChart();
-            await loadAreaAlertCards();
-            await findPatients();
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            setupEventListeners();
-            loadDashboardData();
-        });
     </script>
 </body>
 </html>
