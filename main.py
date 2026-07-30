@@ -18,7 +18,7 @@ app.add_middleware(
 
 @app.get("/")
 def serve_frontend():
-    return FileResponse("index.html")
+    return FileResponse("main.html")
 
 @app.get("/api/locations")
 def get_locations():
