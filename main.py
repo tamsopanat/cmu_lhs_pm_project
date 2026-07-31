@@ -144,8 +144,12 @@ def get_dashboard_data(
     thermal_risk_patients = []
     combined_risk_patients = []
 
+    admin_air_count = 0
+    admin_thermal_count = 0
+    admin_combined_count = 0
+
     for _, row in pat_loc.iterrows():
-        # Dynamic Vulnerability Logic based on UI Checkboxes
+        # --- PROVIDER VIEW LOGIC (Filtered by Checkboxes) ---
         has_resp_issue = False
         if chk_copd and row['copd']: has_resp_issue = True
         if chk_asthma and row['asthma']: has_resp_issue = True
@@ -163,6 +167,24 @@ def get_dashboard_data(
         is_air_risk = air_hazard_active and has_resp_issue
         is_thermal_risk = temp_hazard_active and has_thermal_issue
         
+        # --- ADMIN VIEW LOGIC (Unfiltered All Cases) ---
+        admin_has_resp = row.get('copd', False) or row.get('asthma', False) or row.get('lung_cancer', False) or row.get('post_covid', False)
+        admin_has_thermal = (
+            row.get('age_over_65', False) or row.get('age_under_5', False) or row.get('bedridden_immobile', False) or 
+            row.get('outdoor_worker', False) or row.get('pregnant', False) or row.get('cardiovascular_disease', False) or 
+            row.get('diabetes', False) or row.get('hypertension', False) or row.get('ckd', False)
+        )
+        
+        admin_air_risk = air_hazard_active and admin_has_resp
+        admin_thermal_risk = temp_hazard_active and admin_has_thermal
+        
+        if admin_air_risk and admin_thermal_risk:
+            admin_combined_count += 1
+        elif admin_air_risk:
+            admin_air_count += 1
+        elif admin_thermal_risk:
+            admin_thermal_count += 1
+
         # Build display flags for UI (shows what underlying conditions this patient actually has)
         flags = []
         if row['age'] > 65: flags.append(f"Age {row['age']}")
@@ -213,6 +235,11 @@ def get_dashboard_data(
             "thermal_risk_count": len(thermal_risk_patients),
             "combined_risk_count": len(combined_risk_patients),
             "total_risk_count": len(all_targeted)
+        },
+        "admin_cohorts": {
+            "air_risk_count": admin_air_count,
+            "thermal_risk_count": admin_thermal_count,
+            "combined_risk_count": admin_combined_count
         },
         "patients": all_targeted[:15] # Return top 15 for dashboard display
     }

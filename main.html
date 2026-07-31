@@ -867,11 +867,11 @@
             document.getElementById('air-cohort-count').innerText = data.cohorts.air_risk_count;
             document.getElementById('thermal-cohort-count').innerText = data.cohorts.thermal_risk_count;
             document.getElementById('combined-cohort-count').innerText = data.cohorts.combined_risk_count;
-            
-            // Update Admin View Counters
-            document.getElementById('admin-air-count').innerText = `${data.cohorts.air_risk_count} Individuals`;
-            document.getElementById('admin-thermal-count').innerText = `${data.cohorts.thermal_risk_count} Individuals`;
-            document.getElementById('admin-combined-count').innerText = `${data.cohorts.combined_risk_count} Individuals`;
+
+            // Update Admin View Counters (using unfiltered admin cohorts)
+            document.getElementById('admin-air-count').innerText = `${data.admin_cohorts.air_risk_count} Individuals`;
+            document.getElementById('admin-thermal-count').innerText = `${data.admin_cohorts.thermal_risk_count} Individuals`;
+            document.getElementById('admin-combined-count').innerText = `${data.admin_cohorts.combined_risk_count} Individuals`;
 
             // 4. Update Patient Table
             const tbody = document.getElementById('patient-table-body');
@@ -966,6 +966,11 @@
                     thermal_risk_count: max_temp >= 38 ? 15 : 0,
                     combined_risk_count: (max_pm >= 150 && max_temp >= 38) ? 8 : 0,
                     total_risk_count: (max_pm >= 150 ? 42 : 0) + (max_temp >= 38 ? 15 : 0) + ((max_pm >= 150 && max_temp >= 38) ? 8 : 0)
+                },
+                admin_cohorts: {
+                    air_risk_count: max_pm >= 150 ? 125 : 0,
+                    thermal_risk_count: max_temp >= 38 ? 68 : 0,
+                    combined_risk_count: (max_pm >= 150 && max_temp >= 38) ? 27 : 0
                 },
                 patients: []
             };
