@@ -149,77 +149,81 @@ def get_dashboard_data(
     admin_combined_count = 0
 
     for _, row in pat_loc.iterrows():
-        # --- PROVIDER VIEW LOGIC (Filtered by Checkboxes) ---
-        has_resp_issue = False
-        if chk_copd and row['copd']: has_resp_issue = True
-        if chk_asthma and row['asthma']: has_resp_issue = True
+        # --- 1. DETERMINE PATIENT'S TRUE UNDERLYING VULNERABILITIES ---
+        # This is independent of what the provider checks in the UI.
+        true_has_resp = row.get('copd', False) or row.get('asthma', False) or row.get('lung_cancer', False) or row.get('post_covid', False)
         
-        has_thermal_issue = False
-        if chk_age_65 and row['age_over_65']: has_thermal_issue = True
-        if chk_age_5 and row['age_under_5']: has_thermal_issue = True
-        if chk_bedridden and row['bedridden_immobile']: has_thermal_issue = True
-        if chk_worker and row['outdoor_worker']: has_thermal_issue = True
-        if chk_pregnant and row['pregnant']: has_thermal_issue = True
-        if chk_cvd and row['cardiovascular_disease']: has_thermal_issue = True
-        if chk_diabetes and row['diabetes']: has_thermal_issue = True
-        if chk_ht and row['hypertension']: has_thermal_issue = True
-        
-        is_air_risk = air_hazard_active and has_resp_issue
-        is_thermal_risk = temp_hazard_active and has_thermal_issue
-        
-        # --- ADMIN VIEW LOGIC (Unfiltered All Cases) ---
-        admin_has_resp = row.get('copd', False) or row.get('asthma', False) or row.get('lung_cancer', False) or row.get('post_covid', False)
-        admin_has_thermal = (
+        true_has_thermal = (
             row.get('age_over_65', False) or row.get('age_under_5', False) or row.get('bedridden_immobile', False) or 
             row.get('outdoor_worker', False) or row.get('pregnant', False) or row.get('cardiovascular_disease', False) or 
             row.get('diabetes', False) or row.get('hypertension', False) or row.get('ckd', False)
         )
         
-        admin_air_risk = air_hazard_active and admin_has_resp
-        admin_thermal_risk = temp_hazard_active and admin_has_thermal
-        
-        if admin_air_risk and admin_thermal_risk:
+        # Calculate their true risk categorization
+        true_air_risk = air_hazard_active and true_has_resp
+        true_thermal_risk = temp_hazard_active and true_has_thermal
+
+        # --- 2. ADMIN VIEW LOGIC (Unfiltered All Cases) ---
+        if true_air_risk and true_thermal_risk:
             admin_combined_count += 1
-        elif admin_air_risk:
+        elif true_air_risk:
             admin_air_count += 1
-        elif admin_thermal_risk:
+        elif true_thermal_risk:
             admin_thermal_count += 1
 
-        # Build display flags for UI (shows what underlying conditions this patient actually has)
-        flags = []
-        if row['age'] > 65: flags.append(f"Age {row['age']}")
-        elif row['age'] < 5: flags.append(f"Age {row['age']}")
-        if row['bedridden_immobile']: flags.append("Bedridden")
-        if row['pregnant']: flags.append("Pregnant")
-        if row['outdoor_worker']: flags.append("Outdoor Worker")
-        if row['copd']: flags.append("COPD")
-        if row['asthma']: flags.append("Asthma")
-        if row['cardiovascular_disease']: flags.append("CVD")
-        if row['diabetes']: flags.append("Diabetes")
-        if row['hypertension']: flags.append("Hypertension")
+        # --- 3. PROVIDER VIEW LOGIC (Filtered by Checkboxes) ---
+        # Does the patient have at least one condition that is currently checked?
+        matches_filter = False
         
-        flags_str = ", ".join(flags) if flags else "General Risk"
+        if chk_copd and row['copd']: matches_filter = True
+        if chk_asthma and row['asthma']: matches_filter = True
+        if chk_age_65 and row['age_over_65']: matches_filter = True
+        if chk_age_5 and row['age_under_5']: matches_filter = True
+        if chk_bedridden and row['bedridden_immobile']: matches_filter = True
+        if chk_worker and row['outdoor_worker']: matches_filter = True
+        if chk_pregnant and row['pregnant']: matches_filter = True
+        if chk_cvd and row['cardiovascular_disease']: matches_filter = True
+        if chk_diabetes and row['diabetes']: matches_filter = True
+        if chk_ht and row['hypertension']: matches_filter = True
+        
+        # Only proceed if the patient matches the current UI filters AND is in an active hazard zone
+        if matches_filter and (true_air_risk or true_thermal_risk):
+            
+            # Build display flags for UI (shows what underlying conditions this patient actually has)
+            flags = []
+            if row['age'] > 65: flags.append(f"Age {row['age']}")
+            elif row['age'] < 5: flags.append(f"Age {row['age']}")
+            if row['bedridden_immobile']: flags.append("Bedridden")
+            if row['pregnant']: flags.append("Pregnant")
+            if row['outdoor_worker']: flags.append("Outdoor Worker")
+            if row['copd']: flags.append("COPD")
+            if row['asthma']: flags.append("Asthma")
+            if row['cardiovascular_disease']: flags.append("CVD")
+            if row['diabetes']: flags.append("Diabetes")
+            if row['hypertension']: flags.append("Hypertension")
+            
+            flags_str = ", ".join(flags) if flags else "General Risk"
 
-        patient_obj = {
-            "name_masked": row['name_masked'],
-            "patient_id": row['patient_id'],
-            "tambon": row['tambon'],
-            "flags": flags_str
-        }
+            patient_obj = {
+                "name_masked": row['name_masked'],
+                "patient_id": row['patient_id'],
+                "tambon": row['tambon'],
+                "flags": flags_str
+            }
 
-        # Categorize
-        if is_air_risk and is_thermal_risk:
-            patient_obj["risk_type"] = "COMBINED"
-            patient_obj["env_details"] = f"PM2.5 ({int(max_pm25)}) + Heat ({max_temp}°C)"
-            combined_risk_patients.append(patient_obj)
-        elif is_air_risk:
-            patient_obj["risk_type"] = "AIR"
-            patient_obj["env_details"] = f"PM2.5 ({int(max_pm25)})"
-            air_risk_patients.append(patient_obj)
-        elif is_thermal_risk:
-            patient_obj["risk_type"] = "THERMAL"
-            patient_obj["env_details"] = f"Extreme Heat ({max_temp}°C)"
-            thermal_risk_patients.append(patient_obj)
+            # Categorize based on their TRUE risk profile, not the filtered one
+            if true_air_risk and true_thermal_risk:
+                patient_obj["risk_type"] = "COMBINED"
+                patient_obj["env_details"] = f"PM2.5 ({int(max_pm25)}) + Heat ({max_temp}°C)"
+                combined_risk_patients.append(patient_obj)
+            elif true_air_risk:
+                patient_obj["risk_type"] = "AIR"
+                patient_obj["env_details"] = f"PM2.5 ({int(max_pm25)})"
+                air_risk_patients.append(patient_obj)
+            elif true_thermal_risk:
+                patient_obj["risk_type"] = "THERMAL"
+                patient_obj["env_details"] = f"Extreme Heat ({max_temp}°C)"
+                thermal_risk_patients.append(patient_obj)
 
     # Combine for the table (sorted by severity)
     all_targeted = combined_risk_patients + thermal_risk_patients + air_risk_patients

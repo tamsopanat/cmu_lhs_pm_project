@@ -955,41 +955,106 @@
                 }
             }
 
-            // Calculate mock cohorts based on generated chart data
+            // Calculate active environmental hazards
             const max_pm = Math.max(...pm25);
             const max_temp = Math.max(...temperature);
+
+            // Get live checkbox states
+            const chk_age_65 = document.getElementById('chk-age-65').checked;
+            const chk_age_5 = document.getElementById('chk-age-5').checked;
+            const chk_bedridden = document.getElementById('chk-bedridden').checked;
+            const chk_worker = document.getElementById('chk-worker').checked;
+            const chk_pregnant = document.getElementById('chk-pregnant').checked;
+            const chk_copd = document.getElementById('chk-copd').checked;
+            const chk_asthma = document.getElementById('chk-asthma').checked;
+            const chk_cvd = document.getElementById('chk-cvd').checked;
+            const chk_diabetes = document.getElementById('chk-diabetes').checked;
+            const chk_ht = document.getElementById('chk-ht').checked;
+
+            const air_active = max_pm >= 150;
+            const temp_active = max_temp >= 38;
+
+            let mockPatients = [];
+
+            // Patient A: True vulnerabilities: COPD, Age > 65
+            let patA_matches_filter = (chk_copd) || (chk_age_65);
+            let patA_true_air = air_active; // Has COPD
+            let patA_true_therm = temp_active; // Has Age > 65
+            
+            if (patA_matches_filter && (patA_true_air || patA_true_therm)) {
+                mockPatients.push({
+                    name_masked: "Mock Patient A.", patient_id: "CM-MOCK1", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: (patA_true_air && patA_true_therm) ? "COMBINED" : (patA_true_air ? "AIR" : "THERMAL"),
+                    env_details: `PM2.5: ${Math.floor(max_pm)} | Temp: ${max_temp}°C`,
+                    flags: "COPD, Age > 65"
+                });
+            }
+
+            // Patient B: True vulnerabilities: CVD, Bedridden, Asthma
+            let patB_matches_filter = (chk_cvd) || (chk_bedridden) || (chk_asthma);
+            let patB_true_air = air_active; // Has Asthma
+            let patB_true_therm = temp_active; // Has CVD and Bedridden
+            
+            if (patB_matches_filter && (patB_true_air || patB_true_therm)) {
+                mockPatients.push({
+                    name_masked: "Mock Patient B.", patient_id: "CM-MOCK2", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: (patB_true_air && patB_true_therm) ? "COMBINED" : (patB_true_air ? "AIR" : "THERMAL"),
+                    env_details: "Extreme values present",
+                    flags: "CVD, Bedridden, Asthma"
+                });
+            }
+
+            // Patient C: True vulnerabilities: Children < 5, Asthma
+            let patC_matches_filter = (chk_age_5) || (chk_asthma);
+            let patC_true_air = air_active; // Has Asthma
+            let patC_true_therm = temp_active; // Has Age < 5
+            
+            if (patC_matches_filter && (patC_true_air || patC_true_therm)) {
+                mockPatients.push({
+                    name_masked: "Mock Patient C.", patient_id: "CM-MOCK3", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: (patC_true_air && patC_true_therm) ? "COMBINED" : (patC_true_air ? "AIR" : "THERMAL"),
+                    env_details: "Extreme values present",
+                    flags: "Children < 5, Asthma"
+                });
+            }
+
+            // Patient D: True vulnerabilities: Outdoor Worker
+            let patD_matches_filter = (chk_worker);
+            let patD_true_air = false; // No respiratory
+            let patD_true_therm = temp_active; // Outdoor Worker
+            
+            if (patD_matches_filter && patD_true_therm) {
+                mockPatients.push({
+                    name_masked: "Mock Patient D.", patient_id: "CM-MOCK4", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
+                    risk_type: "THERMAL",
+                    env_details: `Temp: ${max_temp}°C`,
+                    flags: "Outdoor Worker"
+                });
+            }
+
+            // Recalculate Cohort Totals Dynamically based on the filtered patients
+            let air_count = mockPatients.filter(p => p.risk_type === 'AIR').length;
+            let thermal_count = mockPatients.filter(p => p.risk_type === 'THERMAL').length;
+            let combined_count = mockPatients.filter(p => p.risk_type === 'COMBINED').length;
+            
+            // Synthetic multiplier to show realistic scale of a full hospital database
+            const scale = 14; 
 
             const mockData = {
                 environment: { labels, pm25, temperature },
                 cohorts: {
-                    air_risk_count: max_pm >= 150 ? 42 : 0,
-                    thermal_risk_count: max_temp >= 38 ? 15 : 0,
-                    combined_risk_count: (max_pm >= 150 && max_temp >= 38) ? 8 : 0,
-                    total_risk_count: (max_pm >= 150 ? 42 : 0) + (max_temp >= 38 ? 15 : 0) + ((max_pm >= 150 && max_temp >= 38) ? 8 : 0)
+                    air_risk_count: air_count * scale,
+                    thermal_risk_count: thermal_count * scale,
+                    combined_risk_count: combined_count * scale,
+                    total_risk_count: (air_count + thermal_count + combined_count) * scale
                 },
                 admin_cohorts: {
-                    air_risk_count: max_pm >= 150 ? 125 : 0,
-                    thermal_risk_count: max_temp >= 38 ? 68 : 0,
-                    combined_risk_count: (max_pm >= 150 && max_temp >= 38) ? 27 : 0
+                    air_risk_count: air_active ? 125 : 0,
+                    thermal_risk_count: temp_active ? 68 : 0,
+                    combined_risk_count: (air_active && temp_active) ? 27 : 0
                 },
-                patients: []
+                patients: mockPatients
             };
-
-            // Add mock patients if limits are breached
-            if (max_pm >= 150 || max_temp >= 38) {
-                mockData.patients.push({
-                    name_masked: "Mock Patient A.", patient_id: "CM-MOCK1", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
-                    risk_type: (max_pm >= 150 && max_temp >= 38) ? "COMBINED" : (max_pm >= 150 ? "AIR" : "THERMAL"),
-                    env_details: `PM2.5: ${Math.floor(max_pm)} | Temp: ${max_temp}°C`,
-                    flags: "COPD, Age > 65"
-                });
-                mockData.patients.push({
-                    name_masked: "Mock Patient B.", patient_id: "CM-MOCK2", tambon: tambon === "All Tambon" ? "Multiple" : tambon,
-                    risk_type: (max_temp >= 38) ? "THERMAL" : "AIR",
-                    env_details: "Extreme values present",
-                    flags: "CVD, Bedridden"
-                });
-            }
 
             // Render the UI
             updateDashboardUI(mockData);
