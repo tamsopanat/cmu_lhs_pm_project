@@ -313,7 +313,7 @@
                             <p class="text-xs text-red-800">Peak PM2.5 (175 µg/m³) recorded in Suthep district.</p>
                         </div>
                         <div class="mt-4 pt-4 border-t border-red-200">
-                            <div class="text-lg font-black text-red-900">185 Individuals</div>
+                            <div id="admin-air-count" class="text-lg font-black text-red-900">185 Individuals</div>
                             <div class="text-xs text-red-800 font-medium">at high risk due to respiratory conditions</div>
                         </div>
                     </div>
@@ -329,7 +329,7 @@
                             <p class="text-xs text-orange-800">Temperatures exceeding 40°C during peak afternoon hours.</p>
                         </div>
                         <div class="mt-4 pt-4 border-t border-orange-200">
-                            <div class="text-lg font-black text-orange-900">112 Individuals</div>
+                            <div id="admin-thermal-count" class="text-lg font-black text-orange-900">112 Individuals</div>
                             <div class="text-xs text-orange-800 font-medium">at high risk due to age or cardiovascular issues</div>
                         </div>
                     </div>
@@ -345,7 +345,7 @@
                             <p class="text-xs text-purple-800">Intersection of extreme heat and hazardous PM2.5.</p>
                         </div>
                         <div class="mt-4 pt-4 border-t border-purple-200">
-                            <div class="text-lg font-black text-purple-900">45 Individuals</div>
+                            <div id="admin-combined-count" class="text-lg font-black text-purple-900">45 Individuals</div>
                             <div class="text-xs text-purple-800 font-medium">facing compounded critical vulnerability</div>
                         </div>
                     </div>
@@ -867,6 +867,11 @@
             document.getElementById('air-cohort-count').innerText = data.cohorts.air_risk_count;
             document.getElementById('thermal-cohort-count').innerText = data.cohorts.thermal_risk_count;
             document.getElementById('combined-cohort-count').innerText = data.cohorts.combined_risk_count;
+            
+            // Update Admin View Counters
+            document.getElementById('admin-air-count').innerText = `${data.cohorts.air_risk_count} Individuals`;
+            document.getElementById('admin-thermal-count').innerText = `${data.cohorts.thermal_risk_count} Individuals`;
+            document.getElementById('admin-combined-count').innerText = `${data.cohorts.combined_risk_count} Individuals`;
 
             // 4. Update Patient Table
             const tbody = document.getElementById('patient-table-body');
