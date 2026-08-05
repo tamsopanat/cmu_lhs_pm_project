@@ -22,6 +22,7 @@
                 <select id="roleSelector" onchange="switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
                     <option value="provider">👨‍⚕️ Healthcare Provider</option>
                     <option value="admin">🏛️ Administrator</option>
+                    <option value="teacher">👩‍🏫 Teacher</option>
                     <option value="student_parent">🎓👨‍👩‍👧 Student & Parent</option>
                 </select>
                 <div id="roleBadge" class="text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">
@@ -104,10 +105,10 @@
                 <!-- Dashboard Header (Admin Style) -->
                 <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-end">
                     <div>
-                        <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        <h2 id="provider-title" class="text-2xl font-black text-gray-900 tracking-tight">
                             Clinical Outreach & Vulnerability Management
                         </h2>
-                        <p class="text-sm text-gray-500 mt-1">Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.</p>
+                        <p id="provider-desc" class="text-sm text-gray-500 mt-1">Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.</p>
                     </div>
                     <span id="total-risk-count" class="bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full animate-pulse border border-red-200 mb-1">
                         Loading...
@@ -255,7 +256,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
                             <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">📋</span>
-                            Targeted Patient List
+                            <span id="provider-list-title">Targeted Patient List</span>
                         </h3>
                         <button class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 flex items-center gap-1">
                             ⬇️ Export CSV
@@ -267,7 +268,7 @@
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-gray-50 border-b text-gray-500 font-medium">
                                     <tr>
-                                        <th class="px-6 py-4">Patient Info</th>
+                                        <th id="provider-table-header" class="px-6 py-4">Patient Info</th>
                                         <th class="px-6 py-4">Location</th>
                                         <th class="px-6 py-4">Environmental Risk Level</th>
                                         <th class="px-6 py-4">Vulnerability Flags</th>
@@ -768,6 +769,7 @@
             // Define badge styling
             const badges = {
                 'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
+                'teacher': { text: 'Teacher View', class: 'text-teal-800 bg-teal-100 border-teal-200' },
                 'admin': { text: 'Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
                 'student_parent': { text: 'Student & Parent View', class: 'text-green-800 bg-green-100 border-green-200' }
             };
@@ -775,6 +777,24 @@
             // Update badge UI
             roleBadge.innerText = badges[role].text;
             roleBadge.className = `text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${badges[role].class}`;
+
+            // Dynamic text updates for Teacher vs Provider
+            const provTitle = document.getElementById('provider-title');
+            const provDesc = document.getElementById('provider-desc');
+            const provListTitle = document.getElementById('provider-list-title');
+            const provTh = document.getElementById('provider-table-header');
+            
+            if (role === 'teacher') {
+                provTitle.innerText = "Student Health & Vulnerability Management";
+                provDesc.innerText = "Review filtered student cohorts based on real-time environmental exposure and initiate preventative contact.";
+                provListTitle.innerText = "Targeted Student List";
+                provTh.innerText = "Student Info";
+            } else {
+                provTitle.innerText = "Clinical Outreach & Vulnerability Management";
+                provDesc.innerText = "Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.";
+                provListTitle.innerText = "Targeted Patient List";
+                provTh.innerText = "Patient Info";
+            }
 
             // Hide all views first to reset state
             providerView.classList.add('hidden');
@@ -787,6 +807,10 @@
             } else if (role === 'admin') {
                 adminView.classList.remove('hidden');
             } else if (role === 'student_parent') {
+                studentParentView.classList.remove('hidden');
+            } else if (role === 'teacher') {
+                // Teacher gets a hybrid of both!
+                providerView.classList.remove('hidden');
                 studentParentView.classList.remove('hidden');
             }
         }
