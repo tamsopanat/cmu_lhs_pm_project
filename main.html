@@ -22,8 +22,7 @@
                 <select id="roleSelector" onchange="switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
                     <option value="provider">👨‍⚕️ Healthcare Provider</option>
                     <option value="admin">🏛️ Administrator</option>
-                    <option value="student">🎓 Student</option>
-                    <option value="parent">👨‍👩‍👧 Parent</option>
+                    <option value="student_parent">🎓👨‍👩‍👧 Student & Parent</option>
                 </select>
                 <div id="roleBadge" class="text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">
                     Provider View
@@ -423,22 +422,23 @@
         </div>
 
         <!-- ======================================================= -->
-        <!-- STUDENT VIEW -->
+        <!-- STUDENT & PARENT VIEW -->
         <!-- ======================================================= -->
-        <div id="student-view" class="hidden space-y-10">
+        <div id="student-parent-view" class="hidden space-y-10">
             <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="mb-6 border-b border-gray-100 pb-4">
                     <h2 class="text-2xl font-black text-gray-900 tracking-tight">
-                        My Residence & Campus Status
+                        Family & Campus Safety Dashboard
                     </h2>
-                    <div class="flex items-center gap-2 mt-2">
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">📍 Dormitory 4 (Suthep)</span>
                         <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded">🎓 Faculty of Engineering</span>
+                        <span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded">🏫 CMU Demonstration School</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <!-- Localized Environment -->
+                    <!-- Localized Environment (Student) -->
                     <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
                         <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2">Local Environment</h3>
                         <div class="space-y-4">
@@ -457,9 +457,9 @@
                         </div>
                     </div>
 
-                    <!-- Personal Action Plan -->
+                    <!-- Personal Action Plan (Student) -->
                     <div class="bg-blue-50 rounded-lg p-5 border border-blue-100">
-                        <h3 class="font-bold text-blue-900 text-sm uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">Your Action Plan</h3>
+                        <h3 class="font-bold text-blue-900 text-sm uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">Student Action Plan</h3>
                         <ul class="space-y-3 text-sm text-blue-800">
                             <li class="flex items-start gap-2">
                                 <span class="text-lg">🏀</span> <strong>Intramural Sports:</strong> Cancelled for today. Do not run outdoors.
@@ -473,26 +473,9 @@
                         </ul>
                     </div>
                 </div>
-            </section>
-        </div>
-
-        <!-- ======================================================= -->
-        <!-- PARENT VIEW -->
-        <!-- ======================================================= -->
-        <div id="parent-view" class="hidden space-y-10">
-            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="mb-6 border-b border-gray-100 pb-4">
-                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
-                        School & Residence Safety Status
-                    </h2>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded">🏫 CMU Demonstration School</span>
-                        <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">📍 Chang Phueak Residence</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <!-- School Status -->
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- School Status (Parent) -->
                     <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm flex flex-col">
                         <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2 flex items-center gap-2">
                             <span>🏫</span> CMU Demonstration School
@@ -512,9 +495,9 @@
                         </div>
                     </div>
 
-                    <!-- Residence Action -->
+                    <!-- Residence Action (Parent) -->
                     <div class="bg-orange-50 rounded-lg p-5 border border-orange-100 flex flex-col">
-                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines (Chang Phueak)</h3>
+                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines</h3>
                         <div class="flex items-start gap-3 flex-1">
                             <div class="text-orange-600 text-2xl mt-0.5">⚠️</div>
                             <div>
@@ -779,16 +762,14 @@
         function switchRole(role) {
             const providerView = document.getElementById('provider-view');
             const adminView = document.getElementById('admin-view');
-            const studentView = document.getElementById('student-view');
-            const parentView = document.getElementById('parent-view');
+            const studentParentView = document.getElementById('student-parent-view');
             const roleBadge = document.getElementById('roleBadge');
             
             // Define badge styling
             const badges = {
                 'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
                 'admin': { text: 'Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
-                'student': { text: 'Student View', class: 'text-green-800 bg-green-100 border-green-200' },
-                'parent': { text: 'Parent View', class: 'text-orange-800 bg-orange-100 border-orange-200' }
+                'student_parent': { text: 'Student & Parent View', class: 'text-green-800 bg-green-100 border-green-200' }
             };
 
             // Update badge UI
@@ -798,18 +779,15 @@
             // Hide all views first to reset state
             providerView.classList.add('hidden');
             adminView.classList.add('hidden');
-            studentView.classList.add('hidden');
-            parentView.classList.add('hidden');
+            studentParentView.classList.add('hidden');
 
             // Show selected view
             if (role === 'provider') {
                 providerView.classList.remove('hidden');
             } else if (role === 'admin') {
                 adminView.classList.remove('hidden');
-            } else if (role === 'student') {
-                studentView.classList.remove('hidden');
-            } else if (role === 'parent') {
-                parentView.classList.remove('hidden');
+            } else if (role === 'student_parent') {
+                studentParentView.classList.remove('hidden');
             }
         }
 
