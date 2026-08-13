@@ -22,7 +22,6 @@
                 <select id="roleSelector" onchange="switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
                     <option value="provider">👨‍⚕️ Healthcare Provider</option>
                     <option value="admin">🏛️ Administrator</option>
-                    <option value="teacher">👩‍🏫 Teacher</option>
                     <option value="student_parent">🎓👨‍👩‍👧 Student & Parent</option>
                 </select>
                 <div id="roleBadge" class="text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">
@@ -202,7 +201,7 @@
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
                                     <input type="checkbox" id="chk-age-5" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
-                                    <span class="text-sm text-gray-700">Age < 5</span>
+                                    <span class="text-sm text-gray-700">Children &lt; 5</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
                                     <input type="checkbox" id="chk-bedridden" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
@@ -498,7 +497,7 @@
 
                     <!-- Residence Action (Parent) -->
                     <div class="bg-orange-50 rounded-lg p-5 border border-orange-100 flex flex-col">
-                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines</h3>
+                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines (Chang Phueak)</h3>
                         <div class="flex items-start gap-3 flex-1">
                             <div class="text-orange-600 text-2xl mt-0.5">⚠️</div>
                             <div>
@@ -769,7 +768,6 @@
             // Define badge styling
             const badges = {
                 'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
-                'teacher': { text: 'Teacher View', class: 'text-teal-800 bg-teal-100 border-teal-200' },
                 'admin': { text: 'Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
                 'student_parent': { text: 'Student & Parent View', class: 'text-green-800 bg-green-100 border-green-200' }
             };
@@ -777,24 +775,6 @@
             // Update badge UI
             roleBadge.innerText = badges[role].text;
             roleBadge.className = `text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${badges[role].class}`;
-
-            // Dynamic text updates for Teacher vs Provider
-            const provTitle = document.getElementById('provider-title');
-            const provDesc = document.getElementById('provider-desc');
-            const provListTitle = document.getElementById('provider-list-title');
-            const provTh = document.getElementById('provider-table-header');
-            
-            if (role === 'teacher') {
-                provTitle.innerText = "Student Health & Vulnerability Management";
-                provDesc.innerText = "Review filtered student cohorts based on real-time environmental exposure and initiate preventative contact.";
-                provListTitle.innerText = "Targeted Student List";
-                provTh.innerText = "Student Info";
-            } else {
-                provTitle.innerText = "Clinical Outreach & Vulnerability Management";
-                provDesc.innerText = "Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.";
-                provListTitle.innerText = "Targeted Patient List";
-                provTh.innerText = "Patient Info";
-            }
 
             // Hide all views first to reset state
             providerView.classList.add('hidden');
@@ -807,10 +787,6 @@
             } else if (role === 'admin') {
                 adminView.classList.remove('hidden');
             } else if (role === 'student_parent') {
-                studentParentView.classList.remove('hidden');
-            } else if (role === 'teacher') {
-                // Teacher gets a hybrid of both!
-                providerView.classList.remove('hidden');
                 studentParentView.classList.remove('hidden');
             }
         }
