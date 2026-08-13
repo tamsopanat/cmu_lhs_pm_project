@@ -62,7 +62,10 @@ def get_dashboard_data(
     chk_asthma: bool = True,
     chk_cvd: bool = False,
     chk_diabetes: bool = False,
-    chk_ht: bool = False
+    chk_ht: bool = False,
+    chk_lung_cancer: bool = False,
+    chk_post_covid: bool = False,
+    chk_ckd: bool = False
 ):
     """
     Reads the CSV files, merges environmental and patient data,
@@ -74,7 +77,6 @@ def get_dashboard_data(
             content={"error": "Data files missing. Please run generate_mock_data.py first."}
         )
 
-    # 1. Process Environmental Data
     env_df = pd.read_csv("environmental.csv")
     env_df['date'] = pd.to_datetime(env_df['date'])
     
@@ -85,18 +87,33 @@ def get_dashboard_data(
     if tambon != "All Tambon":
         env_loc = env_loc[env_loc['tambon'] == tambon]
     
-    # Aggregate data to a single regional hourly timeline using mean values
-    env_loc = env_loc.groupby('date').agg({
-        'pm25_avg': 'mean',
-        'temperature_avg': 'mean'
-    }).reset_index()
-
-    # Filter by selected date range
+    # Filter by selected date range FIRST before aggregating
     if start_date and end_date:
         start_dt = pd.to_datetime(start_date)
         # Add 1 day minus 1 second to end_date to ensure we capture all 24 hours of the final day
         end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1, seconds=-1)
         env_loc = env_loc[(env_loc['date'] >= start_dt) & (env_loc['date'] <= end_dt)]
+
+    # Extract specific real-time station statuses before averaging them out
+    station_status = []
+    if 'local_name' in env_loc.columns and not env_loc.empty:
+        # Find the latest date (day) in the filtered range
+        latest_date = env_loc['date'].dt.date.max()
+        # Filter data to only include this latest date
+        latest_data = env_loc[env_loc['date'].dt.date == latest_date]
+        
+        # Get the maximum peak values for each station on that specific date
+        for name, group in latest_data.groupby('local_name'):
+            station_status.append({
+                "name": str(name),
+                "pm25": int(group['pm25_avg'].max()),
+                "temp": round(group['temperature_avg'].max(), 1)
+            })
+
+    env_loc = env_loc.groupby('date').agg({
+        'pm25_avg': 'mean',
+        'temperature_avg': 'mean'
+    }).reset_index()
     
     delta_days = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days if start_date and end_date else 0
     
@@ -110,7 +127,7 @@ def get_dashboard_data(
             'pm25_avg': 'max',
             'temperature_avg': 'max'
         }).reset_index()
-        labels = ["Wk of " + d for d in env_grouped['date'].dt.strftime('%b %d').tolist()]
+        labels = ["Week of " + d for d in env_grouped['date'].dt.strftime('%b %d').tolist()]
     else:
         # Default to Daily Max trend
         env_grouped = env_loc.groupby(env_loc['date'].dt.date).agg({
@@ -130,7 +147,6 @@ def get_dashboard_data(
     air_hazard_active = max_pm25 >= 150
     temp_hazard_active = max_temp >= 38.0
 
-    # 2. Process Patient Data and Calculate Vulnerability Cohorts
     pat_df = pd.read_csv("patients.csv")
     
     # Filter patients by hierarchy
@@ -148,6 +164,10 @@ def get_dashboard_data(
     admin_thermal_count = 0
     admin_combined_count = 0
 
+    provider_air_count = 0
+    provider_thermal_count = 0
+    provider_combined_count = 0
+
     for _, row in pat_loc.iterrows():
         # --- 1. DETERMINE PATIENT'S TRUE UNDERLYING VULNERABILITIES ---
         # This is independent of what the provider checks in the UI.
@@ -164,12 +184,13 @@ def get_dashboard_data(
         true_thermal_risk = temp_hazard_active and true_has_thermal
 
         # --- 2. ADMIN VIEW LOGIC (Unfiltered All Cases) ---
+        # Inclusive counting logic
+        if true_air_risk:
+            admin_air_count += 1
+        if true_thermal_risk:
+            admin_thermal_count += 1
         if true_air_risk and true_thermal_risk:
             admin_combined_count += 1
-        elif true_air_risk:
-            admin_air_count += 1
-        elif true_thermal_risk:
-            admin_thermal_count += 1
 
         # --- 3. PROVIDER VIEW LOGIC (Filtered by Checkboxes) ---
         # Does the patient have at least one condition that is currently checked?
@@ -185,11 +206,21 @@ def get_dashboard_data(
         if chk_cvd and row['cardiovascular_disease']: matches_filter = True
         if chk_diabetes and row['diabetes']: matches_filter = True
         if chk_ht and row['hypertension']: matches_filter = True
+        if chk_lung_cancer and row.get('lung_cancer', False): matches_filter = True
+        if chk_post_covid and row.get('post_covid', False): matches_filter = True
+        if chk_ckd and row.get('ckd', False): matches_filter = True
         
         # Only proceed if the patient matches the current UI filters AND is in an active hazard zone
         if matches_filter and (true_air_risk or true_thermal_risk):
             
-            # Build display flags for UI (shows what underlying conditions this patient actually has)
+            # --- PROVIDER COHORT COUNTS (Inclusive) ---
+            if true_air_risk:
+                provider_air_count += 1
+            if true_thermal_risk:
+                provider_thermal_count += 1
+            if true_air_risk and true_thermal_risk:
+                provider_combined_count += 1
+                
             flags = []
             if row['age'] > 65: flags.append(f"Age {row['age']}")
             elif row['age'] < 5: flags.append(f"Age {row['age']}")
@@ -201,6 +232,9 @@ def get_dashboard_data(
             if row['cardiovascular_disease']: flags.append("CVD")
             if row['diabetes']: flags.append("Diabetes")
             if row['hypertension']: flags.append("Hypertension")
+            if row.get('lung_cancer', False): flags.append("Lung Cancer")
+            if row.get('post_covid', False): flags.append("Post-Covid")
+            if row.get('ckd', False): flags.append("CKD")
             
             flags_str = ", ".join(flags) if flags else "General Risk"
 
@@ -232,12 +266,13 @@ def get_dashboard_data(
         "environment": {
             "labels": labels,
             "pm25": [int(x) for x in pm25_data],
-            "temperature": [round(x, 1) for x in temp_data]
+            "temperature": [round(x, 1) for x in temp_data],
+            "stations": station_status
         },
         "cohorts": {
-            "air_risk_count": len(air_risk_patients),
-            "thermal_risk_count": len(thermal_risk_patients),
-            "combined_risk_count": len(combined_risk_patients),
+            "air_risk_count": provider_air_count,
+            "thermal_risk_count": provider_thermal_count,
+            "combined_risk_count": provider_combined_count,
             "total_risk_count": len(all_targeted)
         },
         "admin_cohorts": {

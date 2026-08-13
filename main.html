@@ -93,6 +93,16 @@
                     <span class="w-3 h-3 rounded-full bg-[#f97316]"></span> Extreme Heat (≥38°C)
                 </div>
             </div>
+
+            <!-- Real-time Local Stations Container -->
+            <div class="mt-8 border-t border-gray-100 pt-6">
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span>📡</span> Local Station Readings
+                </h3>
+                <div id="local-stations-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
         </section>
 
         <!-- ======================================================= -->
@@ -241,6 +251,18 @@
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
                                     <input type="checkbox" id="chk-ht" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Hypertension</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-lung-cancer" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Lung Cancer</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-post-covid" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Post-Covid</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-ckd" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">CKD</span>
                                 </label>
                             </div>
                         </div>
@@ -840,7 +862,61 @@
             
             envChart.update();
 
-            // 3. Update Cohort Counters
+            // 3. Update Local Station Grid
+            const grid = document.getElementById('local-stations-grid');
+            grid.innerHTML = ''; // clear grid
+            
+            if (data.environment.stations && data.environment.stations.length > 0) {
+                data.environment.stations.forEach(station => {
+                    const isAirHazard = station.pm25 >= 150;
+                    const isTempHazard = station.temp >= 38;
+                    const isSafe = !isAirHazard && !isTempHazard;
+
+                    let borderClass = 'border-gray-200';
+                    let statusBadge = '';
+
+                    if (isAirHazard && isTempHazard) {
+                        borderClass = 'border-purple-300 ring-1 ring-purple-100 bg-purple-50/30';
+                        statusBadge = `<span class="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-[10px] font-black border border-purple-200 shadow-sm" title="Critical Combined Risk">!</span>`;
+                    } else if (isAirHazard) {
+                        borderClass = 'border-red-300 ring-1 ring-red-50 bg-red-50/30';
+                        statusBadge = `<span class="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 text-[10px] font-black border border-red-200 shadow-sm" title="Air Hazard">!</span>`;
+                    } else if (isTempHazard) {
+                        borderClass = 'border-orange-300 ring-1 ring-orange-50 bg-orange-50/30';
+                        statusBadge = `<span class="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-[10px] font-black border border-orange-200 shadow-sm" title="Thermal Hazard">!</span>`;
+                    } else {
+                        borderClass = 'border-gray-200 hover:border-gray-300';
+                    }
+
+                    grid.innerHTML += `
+                        <div class="relative rounded-xl border ${borderClass} p-4 shadow-sm transition-all duration-200 hover:shadow-md bg-white">
+                            ${statusBadge}
+                            <div class="font-bold text-gray-900 text-sm mb-3 truncate" title="${station.name}">${station.name}</div>
+                            
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                                        PM2.5
+                                    </div>
+                                    <span class="font-bold text-sm ${isAirHazard ? 'text-red-600' : 'text-gray-900'}">${station.pm25}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Temp
+                                    </div>
+                                    <span class="font-bold text-sm ${isTempHazard ? 'text-orange-600' : 'text-gray-900'}">${station.temp}°</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                grid.innerHTML = '<div class="col-span-full text-sm text-gray-500 italic py-2 text-center bg-gray-50 rounded-lg border border-gray-100 border-dashed">No specific local station data available for this view.</div>';
+            }
+
+            // 4. Update Cohort Counters
             document.getElementById('total-risk-count').innerText = `${data.cohorts.total_risk_count} Patients at Risk`;
             document.getElementById('air-cohort-count').innerText = data.cohorts.air_risk_count;
             document.getElementById('thermal-cohort-count').innerText = data.cohorts.thermal_risk_count;
@@ -933,26 +1009,40 @@
                 }
             }
 
-            // Calculate active environmental hazards
+            // Calculate mock cohorts based on generated chart data
             const max_pm = Math.max(...pm25);
             const max_temp = Math.max(...temperature);
 
-            // Get live checkbox states
-            const chk_age_65 = document.getElementById('chk-age-65').checked;
-            const chk_age_5 = document.getElementById('chk-age-5').checked;
-            const chk_bedridden = document.getElementById('chk-bedridden').checked;
-            const chk_worker = document.getElementById('chk-worker').checked;
-            const chk_pregnant = document.getElementById('chk-pregnant').checked;
-            const chk_copd = document.getElementById('chk-copd').checked;
-            const chk_asthma = document.getElementById('chk-asthma').checked;
-            const chk_cvd = document.getElementById('chk-cvd').checked;
-            const chk_diabetes = document.getElementById('chk-diabetes').checked;
-            const chk_ht = document.getElementById('chk-ht').checked;
+            // Generate mock station data based on the calculated extremes
+            let mockStations = [];
+            const stationNames = ["รพ.ฝาง", "สถานีอนามัยเวียง", "เทศบาลตำบลเวียง", "รร.ฝางชนูปถัมภ์"];
+            stationNames.forEach((name, i) => {
+                // Add some jitter to make stations look different
+                let stationPM = Math.max(15, Math.floor(max_pm + (Math.random() * 40 - 20)));
+                let stationTemp = Math.max(25, Math.round((max_temp + (Math.random() * 2 - 1)) * 10) / 10);
+                
+                mockStations.push({
+                    name: name,
+                    pm25: stationPM,
+                    temp: stationTemp
+                });
+            });
 
-            const air_active = max_pm >= 150;
-            const temp_active = max_temp >= 38;
+            // Mock Checkboxes (Simulating UI state for the mock)
+            const chk_age_65 = document.getElementById('chk-age-65')?.checked || false;
+            const chk_age_5 = document.getElementById('chk-age-5')?.checked || false;
+            const chk_bedridden = document.getElementById('chk-bedridden')?.checked || false;
+            const chk_worker = document.getElementById('chk-worker')?.checked || false;
+            const chk_pregnant = document.getElementById('chk-pregnant')?.checked || false;
+            const chk_copd = document.getElementById('chk-copd')?.checked || false;
+            const chk_asthma = document.getElementById('chk-asthma')?.checked || false;
+            const chk_cvd = document.getElementById('chk-cvd')?.checked || false;
+            const chk_diabetes = document.getElementById('chk-diabetes')?.checked || false;
+            const chk_ht = document.getElementById('chk-ht')?.checked || false;
 
             let mockPatients = [];
+            let air_active = max_pm >= 150;
+            let temp_active = max_temp >= 38;
 
             // Patient A: True vulnerabilities: COPD, Age > 65
             let patA_matches_filter = (chk_copd) || (chk_age_65);
@@ -1019,7 +1109,12 @@
             const scale = 14; 
 
             const mockData = {
-                environment: { labels, pm25, temperature },
+                environment: { 
+                    labels, 
+                    pm25, 
+                    temperature,
+                    stations: mockStations 
+                },
                 cohorts: {
                     air_risk_count: air_count * scale,
                     thermal_risk_count: thermal_count * scale,
@@ -1046,16 +1141,21 @@
             const endDate = document.getElementById('end-date').value;
             
             // Get checkbox states
-            const chk_age_65 = document.getElementById('chk-age-65').checked;
-            const chk_age_5 = document.getElementById('chk-age-5').checked;
-            const chk_bedridden = document.getElementById('chk-bedridden').checked;
-            const chk_worker = document.getElementById('chk-worker').checked;
-            const chk_pregnant = document.getElementById('chk-pregnant').checked;
-            const chk_copd = document.getElementById('chk-copd').checked;
-            const chk_asthma = document.getElementById('chk-asthma').checked;
-            const chk_cvd = document.getElementById('chk-cvd').checked;
-            const chk_diabetes = document.getElementById('chk-diabetes').checked;
-            const chk_ht = document.getElementById('chk-ht').checked;
+            const chk_age_65 = document.getElementById('chk-age-65')?.checked || false;
+            const chk_age_5 = document.getElementById('chk-age-5')?.checked || false;
+            const chk_bedridden = document.getElementById('chk-bedridden')?.checked || false;
+            const chk_worker = document.getElementById('chk-worker')?.checked || false;
+            const chk_pregnant = document.getElementById('chk-pregnant')?.checked || false;
+            const chk_copd = document.getElementById('chk-copd')?.checked || false;
+            const chk_asthma = document.getElementById('chk-asthma')?.checked || false;
+            const chk_cvd = document.getElementById('chk-cvd')?.checked || false;
+            const chk_diabetes = document.getElementById('chk-diabetes')?.checked || false;
+            const chk_ht = document.getElementById('chk-ht')?.checked || false;
+            
+            // Add the new missing ones
+            const chk_lung_cancer = document.getElementById('chk-lung-cancer')?.checked || false;
+            const chk_post_covid = document.getElementById('chk-post-covid')?.checked || false;
+            const chk_ckd = document.getElementById('chk-ckd')?.checked || false;
 
             const start = new Date(startDate);
             const end = new Date(endDate);
@@ -1074,7 +1174,8 @@
                     province: prov, amphoe: amphoe, tambon: tambon,
                     start_date: startDate, end_date: endDate, mode: currentMode,
                     chk_age_65, chk_age_5, chk_bedridden, chk_worker, chk_pregnant,
-                    chk_copd, chk_asthma, chk_cvd, chk_diabetes, chk_ht
+                    chk_copd, chk_asthma, chk_cvd, chk_diabetes, chk_ht,
+                    chk_lung_cancer, chk_post_covid, chk_ckd
                 });
 
                 const response = await fetch(`/api/data?${params.toString()}`);
