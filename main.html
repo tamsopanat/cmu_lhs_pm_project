@@ -185,10 +185,11 @@
                 <!-- Vulnerability Parameters (Filters) -->
                 <div>
                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                        <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
+                        <button onclick="toggleFilters()" class="font-bold text-gray-900 text-lg flex items-center gap-2 hover:text-blue-600 transition outline-none">
                             <span class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">🎯</span>
                             Vulnerability Parameters
-                        </h3>
+                            <svg id="filter-icon" class="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
                         <!-- Vulnerability Date Range Selection -->
                         <div class="flex items-center space-x-3 bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3">
                             <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Assessment:</span>
@@ -200,7 +201,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                    <div id="filter-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-5 rounded-xl border border-gray-200 transition-all">
                         <!-- Demographics -->
                         <div>
                             <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Demographic Factors</h4>
@@ -210,7 +211,7 @@
                                     <span class="text-sm text-gray-700">Age > 65</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-age-5" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-age-5" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Children &lt; 5</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
@@ -218,11 +219,11 @@
                                     <span class="text-sm text-gray-700">Bedridden</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-worker" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-worker" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Outdoor Worker</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-pregnant" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-pregnant" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Pregnant</span>
                                 </label>
                             </div>
@@ -241,27 +242,27 @@
                                     <span class="text-sm text-gray-700">Asthma</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-cvd" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-cvd" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Cardiovascular Dis.</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-diabetes" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-diabetes" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Diabetes</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-ht" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-ht" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Hypertension</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-lung-cancer" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-lung-cancer" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Lung Cancer</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-post-covid" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-post-covid" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">Post-Covid</span>
                                 </label>
                                 <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
-                                    <input type="checkbox" id="chk-ckd" onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <input type="checkbox" id="chk-ckd" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
                                     <span class="text-sm text-gray-700">CKD</span>
                                 </label>
                             </div>
@@ -701,6 +702,18 @@
         const btnWeekly = document.getElementById('btn-weekly');
 
         let locationHierarchy = {};
+        
+        function toggleFilters() {
+            const container = document.getElementById('filter-container');
+            const icon = document.getElementById('filter-icon');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                icon.style.transform = "rotate(180deg)";
+            } else {
+                container.classList.add('hidden');
+                icon.style.transform = "rotate(0deg)";
+            }
+        }
 
         function getMockHierarchy() {
             return {
