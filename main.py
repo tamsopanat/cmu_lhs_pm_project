@@ -53,19 +53,22 @@ def get_dashboard_data(
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None,
     mode: str = "daily",
-    chk_age_65: bool = True,
-    chk_age_5: bool = False,
-    chk_bedridden: bool = True,
-    chk_worker: bool = False,
-    chk_pregnant: bool = False,
-    chk_copd: bool = True,
+    chk_child_5: bool = True,
+    chk_newborn: bool = True,
+    chk_athlete: bool = True,
+    chk_obesity: bool = True,
+    chk_underweight: bool = True,
+    chk_bpd: bool = True,
+    chk_rti: bool = True,
     chk_asthma: bool = True,
-    chk_cvd: bool = False,
-    chk_diabetes: bool = False,
-    chk_ht: bool = False,
-    chk_lung_cancer: bool = False,
-    chk_post_covid: bool = False,
-    chk_ckd: bool = False
+    chk_ar: bool = True,
+    chk_chd: bool = True,
+    chk_fever: bool = True,
+    chk_kidney: bool = True,
+    chk_neuro: bool = True,
+    chk_beta_blocker: bool = True,
+    chk_antihistamine: bool = True,
+    chk_diuretic: bool = True
 ):
     """
     Reads the CSV files, merges environmental and patient data,
@@ -147,6 +150,7 @@ def get_dashboard_data(
     air_hazard_active = max_pm25 >= 150
     temp_hazard_active = max_temp >= 38.0
 
+    # 2. Process Patient Data and Calculate Vulnerability Cohorts
     pat_df = pd.read_csv("patients.csv")
     
     # Filter patients by hierarchy
@@ -164,19 +168,34 @@ def get_dashboard_data(
     admin_thermal_count = 0
     admin_combined_count = 0
 
-    provider_air_count = 0
-    provider_thermal_count = 0
-    provider_combined_count = 0
-
     for _, row in pat_loc.iterrows():
         # --- 1. DETERMINE PATIENT'S TRUE UNDERLYING VULNERABILITIES ---
-        # This is independent of what the provider checks in the UI.
-        true_has_resp = row.get('copd', False) or row.get('asthma', False) or row.get('lung_cancer', False) or row.get('post_covid', False)
+        # Based on new clinical logic guidelines
         
+        # High risk associated with PM2.5
+        true_has_resp = (
+            row.get('child_5', False) or 
+            row.get('bpd', False) or 
+            row.get('recurrent_rti', False) or 
+            row.get('asthma', False) or 
+            row.get('allergic_rhinitis', False) or 
+            row.get('chd', False)
+        )
+        
+        # High risk associated with exposure to heat
         true_has_thermal = (
-            row.get('age_over_65', False) or row.get('age_under_5', False) or row.get('bedridden_immobile', False) or 
-            row.get('outdoor_worker', False) or row.get('pregnant', False) or row.get('cardiovascular_disease', False) or 
-            row.get('diabetes', False) or row.get('hypertension', False) or row.get('ckd', False)
+            row.get('fever', False) or 
+            row.get('newborn', False) or 
+            row.get('outdoor_athlete', False) or 
+            row.get('kidney_disease', False) or 
+            row.get('neurologic_disease', False) or 
+            row.get('obesity', False) or 
+            row.get('underweight', False) or 
+            row.get('asthma', False) or 
+            row.get('beta_blocker', False) or 
+            row.get('antihistamine', False) or 
+            row.get('diuretic', False) or 
+            row.get('chd', False)
         )
         
         # Calculate their true risk categorization
@@ -184,7 +203,6 @@ def get_dashboard_data(
         true_thermal_risk = temp_hazard_active and true_has_thermal
 
         # --- 2. ADMIN VIEW LOGIC (Unfiltered All Cases) ---
-        # Inclusive counting logic
         if true_air_risk:
             admin_air_count += 1
         if true_thermal_risk:
@@ -193,48 +211,46 @@ def get_dashboard_data(
             admin_combined_count += 1
 
         # --- 3. PROVIDER VIEW LOGIC (Filtered by Checkboxes) ---
-        # Does the patient have at least one condition that is currently checked?
         matches_filter = False
         
-        if chk_copd and row['copd']: matches_filter = True
-        if chk_asthma and row['asthma']: matches_filter = True
-        if chk_age_65 and row['age_over_65']: matches_filter = True
-        if chk_age_5 and row['age_under_5']: matches_filter = True
-        if chk_bedridden and row['bedridden_immobile']: matches_filter = True
-        if chk_worker and row['outdoor_worker']: matches_filter = True
-        if chk_pregnant and row['pregnant']: matches_filter = True
-        if chk_cvd and row['cardiovascular_disease']: matches_filter = True
-        if chk_diabetes and row['diabetes']: matches_filter = True
-        if chk_ht and row['hypertension']: matches_filter = True
-        if chk_lung_cancer and row.get('lung_cancer', False): matches_filter = True
-        if chk_post_covid and row.get('post_covid', False): matches_filter = True
-        if chk_ckd and row.get('ckd', False): matches_filter = True
+        if chk_child_5 and row.get('child_5', False): matches_filter = True
+        if chk_newborn and row.get('newborn', False): matches_filter = True
+        if chk_athlete and row.get('outdoor_athlete', False): matches_filter = True
+        if chk_obesity and row.get('obesity', False): matches_filter = True
+        if chk_underweight and row.get('underweight', False): matches_filter = True
+        if chk_bpd and row.get('bpd', False): matches_filter = True
+        if chk_rti and row.get('recurrent_rti', False): matches_filter = True
+        if chk_asthma and row.get('asthma', False): matches_filter = True
+        if chk_ar and row.get('allergic_rhinitis', False): matches_filter = True
+        if chk_chd and row.get('chd', False): matches_filter = True
+        if chk_fever and row.get('fever', False): matches_filter = True
+        if chk_kidney and row.get('kidney_disease', False): matches_filter = True
+        if chk_neuro and row.get('neurologic_disease', False): matches_filter = True
+        if chk_beta_blocker and row.get('beta_blocker', False): matches_filter = True
+        if chk_antihistamine and row.get('antihistamine', False): matches_filter = True
+        if chk_diuretic and row.get('diuretic', False): matches_filter = True
         
         # Only proceed if the patient matches the current UI filters AND is in an active hazard zone
         if matches_filter and (true_air_risk or true_thermal_risk):
             
-            # --- PROVIDER COHORT COUNTS (Inclusive) ---
-            if true_air_risk:
-                provider_air_count += 1
-            if true_thermal_risk:
-                provider_thermal_count += 1
-            if true_air_risk and true_thermal_risk:
-                provider_combined_count += 1
-                
+            # Build display flags for UI (shows what underlying conditions this patient actually has)
             flags = []
-            if row['age'] > 65: flags.append(f"Age {row['age']}")
-            elif row['age'] < 5: flags.append(f"Age {row['age']}")
-            if row['bedridden_immobile']: flags.append("Bedridden")
-            if row['pregnant']: flags.append("Pregnant")
-            if row['outdoor_worker']: flags.append("Outdoor Worker")
-            if row['copd']: flags.append("COPD")
-            if row['asthma']: flags.append("Asthma")
-            if row['cardiovascular_disease']: flags.append("CVD")
-            if row['diabetes']: flags.append("Diabetes")
-            if row['hypertension']: flags.append("Hypertension")
-            if row.get('lung_cancer', False): flags.append("Lung Cancer")
-            if row.get('post_covid', False): flags.append("Post-Covid")
-            if row.get('ckd', False): flags.append("CKD")
+            if row.get('child_5', False): flags.append("Children <= 5 yrs")
+            if row.get('newborn', False): flags.append("Newborn")
+            if row.get('outdoor_athlete', False): flags.append("Outdoor Athlete")
+            if row.get('obesity', False): flags.append("Obesity")
+            if row.get('underweight', False): flags.append("Underweight")
+            if row.get('bpd', False): flags.append("BPD")
+            if row.get('recurrent_rti', False): flags.append("Recurrent RTI")
+            if row.get('asthma', False): flags.append("Asthma")
+            if row.get('allergic_rhinitis', False): flags.append("Allergic Rhinitis")
+            if row.get('chd', False): flags.append("CHD")
+            if row.get('fever', False): flags.append("Fever")
+            if row.get('kidney_disease', False): flags.append("Kidney Disease")
+            if row.get('neurologic_disease', False): flags.append("Neurologic Disease")
+            if row.get('beta_blocker', False): flags.append("Beta Blocker")
+            if row.get('antihistamine', False): flags.append("Antihistamine")
+            if row.get('diuretic', False): flags.append("Diuretic")
             
             flags_str = ", ".join(flags) if flags else "General Risk"
 
@@ -270,9 +286,9 @@ def get_dashboard_data(
             "stations": station_status
         },
         "cohorts": {
-            "air_risk_count": provider_air_count,
-            "thermal_risk_count": provider_thermal_count,
-            "combined_risk_count": provider_combined_count,
+            "air_risk_count": admin_air_count,
+            "thermal_risk_count": admin_thermal_count,
+            "combined_risk_count": admin_combined_count,
             "total_risk_count": len(all_targeted)
         },
         "admin_cohorts": {
