@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Parameter Assessment | CMU Learning Health System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,500,0,0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl shrink-0">C</div>
+                <h1 class="text-xl font-bold text-gray-900 truncate">CMU Learning Health System</h1>
+            </div>
+            
+        </div>
+    </header>
+    <div class="app-shell">
+
+        <aside class="section-nav" aria-label="Report sections">
+            <div class="section-nav-heading"><span>REPORT</span><span aria-hidden="true"></span></div>
+            <nav class="section-nav-links">
+                <a class="section-nav-link" href="main.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">air</span>
+                    <span>Environmental Exposure</span>
+                </a>
+                <a class="section-nav-link" href="clinical-outreach.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>
+                    <span>Clinical Outreach &amp; Vulnerability Management</span>
+                </a>
+                <a class="section-nav-link is-active" href="clinical-parameter-assessment.html" aria-current="page">
+                    <span class="material-symbols-rounded" aria-hidden="true">tune</span>
+                    <span>Clinical Parameter Assessment</span>
+                </a>
+            </nav>
+        </aside>
+        <main class="page-main">
+        <div id="provider-view" class="space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        Clinical Parameter Assessment
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Define vulnerability thresholds and assessment windows to identify at-risk patient cohorts.</p>
+                </div>
+
+                <!-- Vulnerability Parameters (Filters) -->
+                <div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+                        <button onclick="toggleFilters()" class="font-bold text-gray-900 text-lg flex items-center gap-2 hover:text-blue-600 transition outline-none">
+                            <span class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">🎯</span>
+                            Vulnerability Parameters
+                            <svg id="filter-icon" class="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <!-- Vulnerability Date Range Selection -->
+                        <div class="assessment-date-picker flex items-center space-x-3 bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Assessment:</span>
+                            <div class="flex items-center space-x-1">
+                                <input type="date" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2025-01-01">
+                                <span class="text-gray-400">-</span>
+                                <input type="date" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-05-10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="filter-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-5 rounded-xl border border-gray-200 transition-all">
+                        <!-- Column 1: Demographics & Medications -->
+                        <div class="space-y-6">
+                            <!-- Demographics -->
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Demographic Factors</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-child-5" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Children &lt;= 5 yrs</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-newborn" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Newborn (&le; 1 yr)</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-athlete" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Outdoor Athlete</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-obesity" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Obesity</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-underweight" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Underweight</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Medication Use -->
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Medication Use</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-beta-blocker" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Beta Blocker</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-antihistamine" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Antihistamine</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                        <input type="checkbox" id="chk-diuretic" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm text-gray-700">Diuretic</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Underlying Conditions -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Underlying Conditions</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-bpd" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">BPD (Active/History)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-rti" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Recurrent RTI (&ge;3/6mo)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-asthma" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Asthma</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-ar" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Allergic Rhinitis</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-chd" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Congenital Heart Dis.</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-fever" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Fever</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-kidney" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Kidney Disease</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-100 cursor-pointer transition">
+                                    <input type="checkbox" id="chk-neuro" checked onchange="fetchDashboardData()" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700">Neurologic Disease</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Actions, Result Count, Active Filter Summary & Presets -->
+                    <div class="mt-4 space-y-3">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button onclick="applyFilters()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">ค้นหา</button>
+                            <button onclick="clearFilters()" class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">ล้างตัวกรอง</button>
+                            <span class="bg-white border-2 border-purple-200 text-purple-700 text-sm font-bold px-4 py-1.5 rounded-full">
+                                ผลลัพธ์: <span id="filtered-result-count">--</span> แถว
+                            </span>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ตัวกรองที่ใช้อยู่</div>
+                            <ul id="active-filters-summary" class="text-sm text-gray-700 list-disc list-inside space-y-1"></ul>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="flex items-center gap-2">
+                                <input id="preset-name-input" type="text" placeholder="ชื่อชุดตัวกรอง" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                                <button onclick="saveFilterPreset()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition whitespace-nowrap">บันทึกชุดตัวกรอง</button>
+                            </div>
+                            <select id="preset-select" onchange="loadFilterPreset(this.value)" class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 cursor-pointer">
+                                <option value="">ชุดตัวกรอง</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <!-- Targeted Patient List -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">📋</span>
+                            <span id="provider-list-title">Targeted Patient List</span>
+                        </h3>
+                        <button class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 flex items-center gap-1">
+                            ⬇️ Export CSV
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 border-b text-gray-500 font-medium">
+                                    <tr>
+                                        <th id="provider-table-header" class="px-6 py-4">Patient Info</th>
+                                        <th class="px-6 py-4">Location</th>
+                                        <th class="px-6 py-4">Environmental Risk Level</th>
+                                        <th class="px-6 py-4">Vulnerability Flags</th>
+                                        <th class="px-6 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patient-table-body" class="divide-y divide-gray-100">
+                                    <!-- Populated dynamically via FastAPI -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 text-center text-xs text-gray-500">
+                            Showing 3 of 12 filtered patients. <a href="#" class="text-blue-600 hover:underline font-medium">View all</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        </main>
+    </div>
+    <div id="aiModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span class="text-blue-600">✨</span> AI Message Generation
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+
+            <div class="mb-4 text-sm text-gray-600">
+                Generating contextual SMS warning in Thai for <strong id="modalPatientName" class="text-gray-900"></strong> based on:
+                <ul class="list-disc ml-5 mt-2 text-xs text-gray-500">
+                    <li>Condition: <span id="modalCondition"></span></li>
+                    <li>Environment: <span id="modalEnv"></span></li>
+                </ul>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 relative min-h-[100px]">
+                <!-- Loading State -->
+                <div id="aiLoading" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-2 text-blue-600 text-sm font-medium">
+                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Drafting message...
+                    </div>
+                </div>
+                <!-- Result text -->
+                <textarea id="aiResult" class="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-800 hidden" rows="4"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="sendSMS()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Send SMS</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

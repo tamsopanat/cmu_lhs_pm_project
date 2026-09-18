@@ -20,6 +20,20 @@ app.add_middleware(
 def serve_frontend():
     return FileResponse("main.html")
 
+FRONTEND_FILES = {
+    "main.html",
+    "clinical-outreach.html",
+    "clinical-parameter-assessment.html",
+    "styles.css",
+    "dashboard.js",
+}
+
+@app.get("/{filename}", include_in_schema=False)
+def serve_frontend_file(filename: str):
+    if filename not in FRONTEND_FILES:
+        return JSONResponse(status_code=404, content={"error": "Not found"})
+    return FileResponse(filename)
+
 @app.get("/api/locations")
 def get_locations():
     """
