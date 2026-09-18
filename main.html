@@ -17,7 +17,14 @@
                 <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl shrink-0">C</div>
                 <h1 class="text-xl font-bold text-gray-900 truncate">CMU Learning Health System</h1>
             </div>
-
+            <div class="flex items-center gap-4">
+                <select id="roleSelector" onchange="switchRole(this.value)" aria-label="Dashboard role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
+                    <option value="provider">Healthcare Provider</option>
+                    <option value="admin">Administrator</option>
+                    <option value="student_parent">Student &amp; Parent</option>
+                </select>
+                <div id="roleBadge" class="hidden sm:block text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">Provider View</div>
+            </div>
         </div>
     </header>
     <div class="app-shell">

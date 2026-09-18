@@ -315,12 +315,16 @@
         }
 
         // --- Role Switching Logic ---
+        const ROLE_STORAGE_KEY = 'lhs_role';
+
         function switchRole(role) {
             const providerView = document.getElementById('provider-view');
             const adminView = document.getElementById('admin-view');
             const studentParentView = document.getElementById('student-parent-view');
+            const accessDeniedView = document.getElementById('access-denied-view');
             const roleBadge = document.getElementById('roleBadge');
-            
+            const roleSelector = document.getElementById('roleSelector');
+
             // Define badge styling
             const badges = {
                 'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
@@ -333,8 +337,18 @@
                 roleBadge.innerText = badges[role].text;
                 roleBadge.className = `text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${badges[role].class}`;
             }
+            if (roleSelector) roleSelector.value = role;
 
-            [providerView, adminView, studentParentView].forEach(view => view?.classList.add('hidden'));
+            try { localStorage.setItem(ROLE_STORAGE_KEY, role); } catch (e) {}
+
+            [providerView, adminView, studentParentView, accessDeniedView].forEach(view => view?.classList.add('hidden'));
+
+            // Pages with a single role-gated view (e.g. Clinical Parameter Assessment):
+            // only Providers see the content, everyone else gets the access-denied notice.
+            if (accessDeniedView && !adminView && !studentParentView) {
+                (role === 'provider' ? providerView : accessDeniedView)?.classList.remove('hidden');
+                return;
+            }
 
             const selectedView = {
                 provider: providerView,
@@ -707,6 +721,11 @@
         window.addEventListener('DOMContentLoaded', () => {
             refreshPresetDropdown();
             renderActiveFilters();
+            if (document.getElementById('roleSelector')) {
+                let savedRole = 'provider';
+                try { savedRole = localStorage.getItem(ROLE_STORAGE_KEY) || 'provider'; } catch (e) {}
+                switchRole(savedRole);
+            }
             if (document.getElementById('province-select')) {
                 initLocationDropdowns(); // This will trigger fetchDashboardData internally
             } else if (document.getElementById('patient-table-body') || document.getElementById('total-risk-count')) {
