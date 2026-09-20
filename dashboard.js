@@ -317,44 +317,191 @@
         // --- Role Switching Logic ---
         const ROLE_STORAGE_KEY = 'lhs_role';
 
+        const ROLE_CONFIG = {
+            super_admin: { text: 'Administrator View', class: 'text-slate-800 bg-slate-100 border-slate-300' },
+            provider: { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
+            admin: { text: 'Provincial Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
+            student_teacher_yupparaj: { text: 'Yupparaj School View', class: 'text-green-800 bg-green-100 border-green-200' },
+            student_teacher_wattanothaipayap: { text: 'Wattanothaipayap School View', class: 'text-emerald-800 bg-emerald-100 border-emerald-200' }
+        };
+
+        const STUDENT_SCHOOL_DATA = {
+            student_teacher_yupparaj: {
+                school: 'Yupparaj Wittayalai School',
+                total: 842,
+                present: 803,
+                absent: 39,
+                records: [
+                    ['YP-670184', 'Nattapong Saelim', 'Grade 10 / 2', '14 Feb 2010', '089-245-1180', 'Asthma', 'Present'],
+                    ['YP-670231', 'Pimchanok Khamdee', 'Grade 10 / 3', '03 Jun 2010', '081-762-4533', 'None', 'Present'],
+                    ['YP-660097', 'Thanakorn Inta', 'Grade 11 / 1', '28 Nov 2009', '086-119-8064', 'Peanut allergy', 'Absent'],
+                    ['YP-650142', 'Kanyarat Wongsa', 'Grade 12 / 4', '17 Aug 2008', '095-447-2231', 'None', 'Present'],
+                    ['YP-680055', 'Phurinat Chaiyo', 'Grade 9 / 2', '21 Jan 2011', '092-536-9017', 'Inhaler on file', 'Present']
+                ]
+            },
+            student_teacher_wattanothaipayap: {
+                school: 'Wattanothaipayap School',
+                total: 716,
+                present: 664,
+                absent: 52,
+                records: [
+                    ['WT-670088', 'Sirinya Muenkaew', 'Grade 10 / 1', '09 Mar 2010', '084-321-7784', 'None', 'Present'],
+                    ['WT-660174', 'Patcharapon Boonmee', 'Grade 11 / 3', '30 Sep 2009', '098-672-1902', 'Dust allergy', 'Absent'],
+                    ['WT-650203', 'Chayada Rattanakul', 'Grade 12 / 2', '11 Dec 2008', '082-954-6610', 'None', 'Present'],
+                    ['WT-680026', 'Kittiphop Jaidee', 'Grade 9 / 1', '05 May 2011', '091-348-2577', 'Asthma', 'Present'],
+                    ['WT-670119', 'Nalinee Srisuk', 'Grade 10 / 4', '22 Jul 2010', '087-106-4298', 'None', 'Absent']
+                ]
+            }
+        };
+
+        function renderStudentInformation(role) {
+            let data = STUDENT_SCHOOL_DATA[role];
+            if (role === 'super_admin') {
+                const schools = Object.values(STUDENT_SCHOOL_DATA);
+                data = {
+                    school: 'All Schools (2)',
+                    total: schools.reduce((sum, school) => sum + school.total, 0),
+                    present: schools.reduce((sum, school) => sum + school.present, 0),
+                    absent: schools.reduce((sum, school) => sum + school.absent, 0),
+                    records: schools.flatMap(school => school.records.map(record => [...record, school.school]))
+                };
+            } else if (data) {
+                data = { ...data, records: data.records.map(record => [...record, data.school]) };
+            }
+            if (!data) return;
+
+            const attendanceRate = `${((data.present / data.total) * 100).toFixed(1)}%`;
+            const values = {
+                'student-school-name': data.school,
+                'student-table-school': data.school,
+                'student-total': data.total.toLocaleString(),
+                'student-present': data.present.toLocaleString(),
+                'student-absent': data.absent.toLocaleString(),
+                'student-attendance-rate': attendanceRate,
+                'student-present-detail': `${attendanceRate} of enrolled students`,
+                'student-absent-detail': `${((data.absent / data.total) * 100).toFixed(1)}% of enrolled students`
+            };
+            Object.entries(values).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+
+            const tableBody = document.getElementById('student-records-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = data.records.map(record => {
+                const isPresent = record[6] === 'Present';
+                const statusClass = isPresent ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+                return `<tr class="hover:bg-gray-50">
+                    <td class="px-5 py-4 font-mono text-xs text-gray-600">${record[0]}</td>
+                    <td class="px-5 py-4 font-semibold text-gray-900">${record[1]}</td>
+                    <td class="px-5 py-4 text-gray-600">${record[7]}</td>
+                    <td class="px-5 py-4 text-gray-600">${record[2]}</td>
+                    <td class="px-5 py-4 text-gray-600">${record[3]}</td>
+                    <td class="px-5 py-4 text-gray-600">${record[4]}</td>
+                    <td class="px-5 py-4 text-gray-600">${record[5]}</td>
+                    <td class="px-5 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-bold ${statusClass}">${record[6]}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderSchoolSafetyContext(role) {
+            const school = STUDENT_SCHOOL_DATA[role]?.school;
+            if (!school) return;
+            ['outreach-school-badge', 'outreach-school-heading'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = school;
+            });
+        }
+
+        const WILDFIRE_INCIDENTS = [
+            { id: 'WF-260920-01', place: 'Mae Rim', lat: 18.9236, lng: 98.9394, severity: 'High', status: 'Ground crews deployed' },
+            { id: 'WF-260920-02', place: 'Samoeng', lat: 18.8481, lng: 98.7322, severity: 'High', status: 'Air support requested' },
+            { id: 'WF-260920-03', place: 'Mueang Chiang Mai', lat: 18.8048, lng: 98.9447, severity: 'Medium', status: 'Containment line active' },
+            { id: 'WF-260920-04', place: 'Doi Saket', lat: 18.8924, lng: 99.1368, severity: 'Medium', status: 'Monitoring spread' },
+            { id: 'WF-260920-05', place: 'Hang Dong', lat: 18.6878, lng: 98.9103, severity: 'Low', status: 'Local team on site' },
+            { id: 'WF-260920-06', place: 'Mae On', lat: 18.7491, lng: 99.2427, severity: 'Low', status: 'Verification in progress' }
+        ];
+        let wildfireMap = null;
+
+        function initializeWildfireMap() {
+            const mapElement = document.getElementById('wildfire-map');
+            if (!mapElement || typeof L === 'undefined') return;
+
+            if (!wildfireMap) {
+                wildfireMap = L.map(mapElement, { scrollWheelZoom: false }).setView([18.82, 98.98], 9);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 18,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(wildfireMap);
+
+                const colors = { High: '#dc2626', Medium: '#f97316', Low: '#eab308' };
+                WILDFIRE_INCIDENTS.forEach(incident => {
+                    L.circleMarker([incident.lat, incident.lng], {
+                        radius: incident.severity === 'High' ? 11 : 9,
+                        color: '#ffffff',
+                        weight: 2,
+                        fillColor: colors[incident.severity],
+                        fillOpacity: 0.95
+                    }).addTo(wildfireMap).bindPopup(
+                        `<strong>${incident.id}</strong><br>${incident.place}, Chiang Mai<br>` +
+                        `Severity: <strong>${incident.severity}</strong><br>${incident.status}`
+                    );
+                });
+            }
+            window.setTimeout(() => wildfireMap.invalidateSize(), 50);
+        }
+
         function switchRole(role) {
+            if (role === 'student_parent') role = 'student_teacher_yupparaj';
+            if (!ROLE_CONFIG[role]) role = 'provider';
+
             const providerView = document.getElementById('provider-view');
             const adminView = document.getElementById('admin-view');
-            const studentParentView = document.getElementById('student-parent-view');
+            const studentSchoolView = document.getElementById('student-school-view');
             const accessDeniedView = document.getElementById('access-denied-view');
+            const restrictedPageContent = document.getElementById('restricted-page-content');
             const roleBadge = document.getElementById('roleBadge');
             const roleSelector = document.getElementById('roleSelector');
 
-            // Define badge styling
-            const badges = {
-                'provider': { text: 'Provider View', class: 'text-blue-800 bg-blue-100 border-blue-200' },
-                'admin': { text: 'Admin View', class: 'text-purple-800 bg-purple-100 border-purple-200' },
-                'student_parent': { text: 'Student & Parent View', class: 'text-green-800 bg-green-100 border-green-200' }
-            };
-
             // Update badge UI
             if (roleBadge) {
-                roleBadge.innerText = badges[role].text;
-                roleBadge.className = `text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${badges[role].class}`;
+                roleBadge.innerText = ROLE_CONFIG[role].text;
+                roleBadge.className = `hidden sm:block text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${ROLE_CONFIG[role].class}`;
             }
             if (roleSelector) roleSelector.value = role;
 
             try { localStorage.setItem(ROLE_STORAGE_KEY, role); } catch (e) {}
 
-            [providerView, adminView, studentParentView, accessDeniedView].forEach(view => view?.classList.add('hidden'));
+            [providerView, adminView, studentSchoolView, restrictedPageContent, accessDeniedView].forEach(view => view?.classList.add('hidden'));
+
+            // Generic access gate used by Student Information and Wildfire Information.
+            if (restrictedPageContent) {
+                const allowedRoles = (restrictedPageContent.dataset.allowedRoles || '').split(',');
+                if (allowedRoles.includes(role)) {
+                    restrictedPageContent.classList.remove('hidden');
+                    renderStudentInformation(role);
+                    if (role === 'admin' || role === 'super_admin') initializeWildfireMap();
+                } else {
+                    accessDeniedView?.classList.remove('hidden');
+                }
+                return;
+            }
 
             // Pages with a single role-gated view (e.g. Clinical Parameter Assessment):
             // only Providers see the content, everyone else gets the access-denied notice.
-            if (accessDeniedView && !adminView && !studentParentView) {
-                (role === 'provider' ? providerView : accessDeniedView)?.classList.remove('hidden');
+            if (accessDeniedView && !adminView && !studentSchoolView) {
+                (role === 'provider' || role === 'super_admin' ? providerView : accessDeniedView)?.classList.remove('hidden');
                 return;
             }
 
             const selectedView = {
                 provider: providerView,
                 admin: adminView,
-                student_parent: studentParentView
+                super_admin: adminView,
+                student_teacher_yupparaj: studentSchoolView,
+                student_teacher_wattanothaipayap: studentSchoolView
             }[role];
+            renderSchoolSafetyContext(role);
             selectedView?.classList.remove('hidden');
         }
 
@@ -805,4 +952,3 @@
                 closeModal();
             }
         }
-

@@ -19,9 +19,11 @@
             </div>
             <div class="flex items-center gap-4">
                 <select id="roleSelector" onchange="switchRole(this.value)" aria-label="Dashboard role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
+                    <option value="super_admin">Administrator</option>
                     <option value="provider">Healthcare Provider</option>
-                    <option value="admin">Provincial Public Health Office</option>
-                    <option value="student_parent">Student &amp; Parent</option>
+                    <option value="admin">Provincial Administrative Organization (อบจ.)</option>
+                    <option value="student_teacher_yupparaj">Student and Teacher (Yupparaj Wittayalai School)</option>
+                    <option value="student_teacher_wattanothaipayap">Student and Teacher (Wattanothaipayap School)</option>
                 </select>
                 <div id="roleBadge" class="hidden sm:block text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">Provider View</div>
             </div>
@@ -43,6 +45,14 @@
                 <a class="section-nav-link" href="clinical-parameter-assessment.html">
                     <span class="material-symbols-rounded" aria-hidden="true">tune</span>
                     <span>Clinical Parameter Assessment</span>
+                </a>
+                <a class="section-nav-link role-protected" data-roles="super_admin,student_teacher_yupparaj,student_teacher_wattanothaipayap" href="student-information.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">school</span>
+                    <span>Student Information</span>
+                </a>
+                <a class="section-nav-link role-protected" data-roles="admin,super_admin" href="wildfire-information.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">local_fire_department</span>
+                    <span>Wildfire Information</span>
                 </a>
             </nav>
         </aside>

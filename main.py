@@ -24,6 +24,8 @@ FRONTEND_FILES = {
     "main.html",
     "clinical-outreach.html",
     "clinical-parameter-assessment.html",
+    "student-information.html",
+    "wildfire-information.html",
     "styles.css",
     "dashboard.js",
 }
