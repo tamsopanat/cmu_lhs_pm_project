@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Outreach & Vulnerability Management | CMU Learning Health System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,500,0,0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl shrink-0">C</div>
+                <h1 class="text-xl font-bold text-gray-900 truncate">CMU Learning Health System</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <select id="roleSelector" onchange="switchRole(this.value)" aria-label="Dashboard role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition">
+                    <option value="super_admin">Administrator</option>
+                    <option value="provider">Healthcare Provider</option>
+                    <option value="admin">Provincial Administrative Organization (อบจ.)</option>
+                    <option value="student_teacher_yupparaj">Student and Teacher (Yupparaj Wittayalai School)</option>
+                    <option value="student_teacher_wattanothaipayap">Student and Teacher (Wattanothaipayap School)</option>
+                </select>
+                <div id="roleBadge" class="hidden sm:block text-sm font-medium text-blue-800 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full shadow-sm">Provider View</div>
+            </div>
+        </div>
+    </header>
+    <div class="app-shell">
+
+        <aside class="section-nav" aria-label="Report sections">
+            <div class="section-nav-heading"><span>REPORT</span><span aria-hidden="true"></span></div>
+            <nav class="section-nav-links">
+                <a class="section-nav-link" href="main.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">air</span>
+                    <span>Environmental Exposure</span>
+                </a>
+                <a class="section-nav-link is-active" href="clinical-outreach.html" aria-current="page">
+                    <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>
+                    <span>Clinical Outreach &amp; Vulnerability Management</span>
+                </a>
+                <a class="section-nav-link" href="clinical-parameter-assessment.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">tune</span>
+                    <span>Clinical Parameter Assessment</span>
+                </a>
+                <a class="section-nav-link role-protected" data-roles="super_admin,student_teacher_yupparaj,student_teacher_wattanothaipayap" href="student-information.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">school</span>
+                    <span>Student Information</span>
+                </a>
+                <a class="section-nav-link role-protected" data-roles="admin,super_admin" href="wildfire-information.html">
+                    <span class="material-symbols-rounded" aria-hidden="true">local_fire_department</span>
+                    <span>Wildfire Information</span>
+                </a>
+            </nav>
+        </aside>
+        <main class="page-main">
+        <div id="provider-view" class="space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <!-- Dashboard Header (Admin Style) -->
+                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-end">
+                    <div>
+                        <h2 id="provider-title" class="text-2xl font-black text-gray-900 tracking-tight">
+                            Clinical Outreach & Vulnerability Management
+                        </h2>
+                        <p id="provider-desc" class="text-sm text-gray-500 mt-1">Review filtered cohorts based on real-time environmental exposure and initiate preventative contact.</p>
+                    </div>
+                    <span id="total-risk-count" class="bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full animate-pulse border border-red-200 mb-1">
+                        Loading...
+                    </span>
+                </div>
+
+                <!-- High-level Patient Cohort Breakdown (Admin Style Cards) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- PM2.5 Driven Cohort -->
+                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-red-600 text-lg">⚠️</span>
+                                <h3 class="font-bold text-red-900 text-sm uppercase tracking-wider">Air Quality Risk Cohort</h3>
+                            </div>
+                            <div id="air-cohort-count" class="text-3xl font-black text-red-700 mb-1">--</div>
+                            <p class="text-xs text-red-800">Triggered by max PM2.5 primarily in selected district.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-red-200">
+                            <div class="text-xs text-red-800 font-medium">Flagged for COPD, Asthma, and other respiratory conditions.</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Thermal Driven Cohort -->
+                    <div class="bg-orange-50 rounded-xl p-5 border border-orange-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-orange-600 text-lg">🌡️</span>
+                                <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider">Thermal Risk Cohort</h3>
+                            </div>
+                            <div id="thermal-cohort-count" class="text-3xl font-black text-orange-700 mb-1">--</div>
+                            <p class="text-xs text-orange-800">Triggered by extreme heat during peak afternoon hours.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-orange-200">
+                            <div class="text-xs text-orange-800 font-medium">Flagged for Age > 65, Cardiovascular Disease, and Bedridden status.</div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Risk Cohort -->
+                    <div class="bg-purple-50 rounded-xl p-5 border border-purple-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-purple-600 text-lg">⚕️</span>
+                                <h3 class="font-bold text-purple-900 text-sm uppercase tracking-wider">Critical Combined Risk</h3>
+                            </div>
+                            <div id="combined-cohort-count" class="text-3xl font-black text-purple-700 mb-1">--</div>
+                            <p class="text-xs text-purple-800">Intersection of extreme heat and hazardous PM2.5 levels.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-purple-200">
+                            <div class="text-xs text-purple-800 font-medium">Highest priority for immediate outreach.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div id="admin-view" class="hidden space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        District-Wide Health & Operations Impact
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Aggregated, de-identified environmental health data and actionable guidelines for administration.</p>
+                </div>
+
+                <!-- High-level Aggregate Stats Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Air Quality Impact -->
+                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-red-600 text-lg">⚠️</span>
+                                <h3 class="font-bold text-red-900 text-sm uppercase tracking-wider">Air Quality Alert</h3>
+                            </div>
+                            <div class="text-3xl font-black text-red-700 mb-1">Hazardous</div>
+                            <p class="text-xs text-red-800">Peak PM2.5 (175 µg/m³) recorded in Suthep district.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-red-200">
+                            <div id="admin-air-count" class="text-lg font-black text-red-900">185 Individuals</div>
+                            <div class="text-xs text-red-800 font-medium">at high risk due to respiratory conditions</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Thermal Impact -->
+                    <div class="bg-orange-50 rounded-xl p-5 border border-orange-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-orange-600 text-lg">🌡️</span>
+                                <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider">Thermal Alert</h3>
+                            </div>
+                            <div class="text-3xl font-black text-orange-700 mb-1">Extreme Heat</div>
+                            <p class="text-xs text-orange-800">Temperatures exceeding 40°C during peak afternoon hours.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-orange-200">
+                            <div id="admin-thermal-count" class="text-lg font-black text-orange-900">112 Individuals</div>
+                            <div class="text-xs text-orange-800 font-medium">at high risk due to age or cardiovascular issues</div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Impact -->
+                    <div class="bg-purple-50 rounded-xl p-5 border border-purple-100 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-purple-600 text-lg">⚕️</span>
+                                <h3 class="font-bold text-purple-900 text-sm uppercase tracking-wider">Combined Risk</h3>
+                            </div>
+                            <div class="text-3xl font-black text-purple-700 mb-1">Critical</div>
+                            <p class="text-xs text-purple-800">Intersection of extreme heat and hazardous PM2.5.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-purple-200">
+                            <div id="admin-combined-count" class="text-lg font-black text-purple-900">45 Individuals</div>
+                            <div class="text-xs text-purple-800 font-medium">facing compounded critical vulnerability</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidelines Separated by Risk -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Air Quality Protocols -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-red-100 text-red-600 w-8 h-8 rounded-lg flex items-center justify-center">⚠️</span>
+                            Air Quality Protocols (PM2.5)
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>😷</span> N95 Mask Mandate
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">N95 masks are strictly required for transit between campus buildings. Ensure distribution points at all faculty entrances are fully stocked.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🌬️</span> Indoor Air Purification
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Activate heavy-duty HVAC HEPA filters across all lecture halls. Keep all dormitory, classroom, and office windows completely sealed.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thermal Protocols -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-orange-100 text-orange-600 w-8 h-8 rounded-lg flex items-center justify-center">🌡️</span>
+                            Thermal Protocols (Heat Wave)
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>💧</span> Mandatory Hydration Stations
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Deploy mobile water stations in high-traffic shaded areas. Send SMS alerts reminding staff and students to hydrate hourly.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>👷</span> Campus Staff Work Limits
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Restrict outdoor maintenance, landscaping, and security staff to 15-minute shifts outdoors between 11:00 AM and 4:00 PM.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Combined Risk Protocols -->
+                    <div class="lg:col-span-2 mt-2">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <span class="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center">🛑</span>
+                            Universal High-Risk Actions (Combined Exposure)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🚫</span> Outdoor Activities Suspended
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">All physical education classes and outdoor campus events are cancelled. Sports facilities must operate strictly indoors.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                                    <span>🚌</span> Increased Transit Frequency
+                                </h4>
+                                <p class="text-sm text-gray-600 mt-1">Campus EV shuttles must operate at a 5-minute frequency to minimize outdoor walking and heat/PM2.5 exposure for all individuals.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="student-school-view" class="hidden space-y-10">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="mb-6 border-b border-gray-100 pb-4">
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                        Student &amp; School Safety Dashboard
+                    </h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">📍 Dormitory 4 (Suthep)</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded">🎓 Faculty of Engineering</span>
+                        <span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded">🏫 <span id="outreach-school-badge">Yupparaj Wittayalai School</span></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Localized Environment (Student) -->
+                    <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2">Local Environment</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Outdoor PM2.5</span>
+                                <span class="text-red-600 font-bold">175 µg/m³</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Dorm 4 Indoor AQI</span>
+                                <span class="text-green-600 font-bold">22 µg/m³ (Safe)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600">Outdoor Temperature</span>
+                                <span class="text-orange-600 font-bold">40°C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Action Plan (Student) -->
+                    <div class="bg-blue-50 rounded-lg p-5 border border-blue-100">
+                        <h3 class="font-bold text-blue-900 text-sm uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">Student Action Plan</h3>
+                        <ul class="space-y-3 text-sm text-blue-800">
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">🏀</span> <strong>Intramural Sports:</strong> Cancelled for today. Do not run outdoors.
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">😷</span> <strong>Mask Pickup:</strong> Free N95 masks available at Dorm 4 front desk.
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-lg">📚</span> <strong>Study Areas:</strong> Engineering Library air purifiers are running at full capacity.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- School Status (Parent) -->
+                    <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b pb-2 flex items-center gap-2">
+                            <span>🏫</span> <span id="outreach-school-heading">Yupparaj Wittayalai School</span>
+                        </h3>
+                        <div class="space-y-3 flex-1">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Indoor Classrooms AQI</span>
+                                <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold">SAFE (25 µg/m³)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Recess / PE Status</span>
+                                <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">MOVED INDOORS</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
+                                All classrooms are sealed and air purifiers are active. Please pick up students directly from the main indoor hall today.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Residence Action (Parent) -->
+                    <div class="bg-orange-50 rounded-lg p-5 border border-orange-100 flex flex-col">
+                        <h3 class="font-bold text-orange-900 text-sm uppercase tracking-wider mb-4 border-b border-orange-200 pb-2">Home Guidelines (Chang Phueak)</h3>
+                        <div class="flex items-start gap-3 flex-1">
+                            <div class="text-orange-600 text-2xl mt-0.5">⚠️</div>
+                            <div>
+                                <p class="text-sm text-orange-800 font-medium">Outdoor levels near your residence are currently HIGH (142 µg/m³).</p>
+                                <ul class="list-disc list-inside mt-3 text-xs text-orange-700 space-y-1.5">
+                                    <li>Keep all windows and doors closed.</li>
+                                    <li>Turn on home air purifiers if available.</li>
+                                    <li>Ensure your child carries their prescribed asthma inhaler.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
