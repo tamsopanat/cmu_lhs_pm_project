@@ -18,7 +18,25 @@ app.add_middleware(
 
 @app.get("/")
 def serve_frontend():
-    return FileResponse("main.html")
+    return FileResponse("landing.html")
+
+FRONTEND_FILES = {
+    "landing.html",
+    "Logo Global Health Research Center.png",
+    "main.html",
+    "clinical-outreach.html",
+    "clinical-parameter-assessment.html",
+    "student-information.html",
+    "wildfire-information.html",
+    "styles.css",
+    "dashboard.js",
+}
+
+@app.get("/{filename}", include_in_schema=False)
+def serve_frontend_file(filename: str):
+    if filename not in FRONTEND_FILES:
+        return JSONResponse(status_code=404, content={"error": "Not found"})
+    return FileResponse(filename)
 
 FRONTEND_FILES = {
     "main.html",
