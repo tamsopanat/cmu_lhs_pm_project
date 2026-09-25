@@ -816,6 +816,7 @@
         }
 
         const bangkokToday = (offset) => new Date(Date.now() + (7 * 60 - offset * 24 * 60) * 60000).toISOString().slice(0, 10);
+        let firstDashboardFetch = true;
 
         async function fetchDashboardData() {
             const prov = document.getElementById('province-select')?.value || 'เชียงใหม่';
@@ -853,9 +854,11 @@
             }
 
             try {
+                const refresh = firstDashboardFetch && !document.getElementById('province-select');
+                firstDashboardFetch = false;
                 const params = new URLSearchParams({
                     province: prov, amphoe: amphoe, tambon: tambon,
-                    start_date: startDate, end_date: endDate, mode: currentMode,
+                    start_date: startDate, end_date: endDate, mode: currentMode, refresh,
                     chk_child_5, chk_newborn, chk_athlete, chk_obesity, chk_underweight,
                     chk_bpd, chk_rti, chk_asthma, chk_ar, chk_chd,
                     chk_fever, chk_kidney, chk_neuro, chk_beta_blocker, chk_antihistamine, chk_diuretic
@@ -880,7 +883,7 @@
                 const asOf = observation ? ` Latest observation: ${observation.replace('T', ' ')} (Thailand time).` : '';
                 setEnvironmentStatus(data.environment.source === 'cache'
                     ? `Showing the last saved DustBoy readings because some API requests failed.${asOf}`
-                    : `Live DustBoy readings.${asOf}`, data.environment.source === 'cache');
+                    : `Live DustBoy station readings. The trend uses available saved observations.${asOf}`, data.environment.source === 'cache');
 
             } catch (error) {
                 setEnvironmentStatus(`Readings unavailable: ${error.message}`);

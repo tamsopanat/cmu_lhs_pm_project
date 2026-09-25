@@ -46,7 +46,7 @@ def serve_frontend_file(filename: str):
 def get_locations():
     """Return the location hierarchy supplied by the current DustBoy stations."""
     try:
-        station_list, _, _ = stations()
+        station_list, _, _ = stations(force=True)
     except RuntimeError as error:
         return JSONResponse(status_code=503, content={"error": str(error)})
     hierarchy = {}
@@ -79,7 +79,8 @@ def get_dashboard_data(
     chk_neuro: bool = True,
     chk_beta_blocker: bool = True,
     chk_antihistamine: bool = True,
-    chk_diuretic: bool = True
+    chk_diuretic: bool = True,
+    refresh: bool = False
 ):
     """
     Reads current DustBoy observations and patient data,
@@ -91,18 +92,19 @@ def get_dashboard_data(
             content={"error": "Patient data file missing."}
         )
     try:
-        station_list, station_cache, fetched_at = stations()
+        station_list, station_cache, fetched_at = stations(force=refresh)
         selected = [s for s in station_list if s["province"] == province
                     and (amphoe == "All Amphoe" or s["amphoe"] == amphoe)
                     and (tambon == "All Tambon" or s["tambon"] == tambon)]
-        readings, history_cache = observations(selected)
+        readings = observations(selected)
     except RuntimeError as error:
         return JSONResponse(status_code=503, content={"error": str(error)})
     if not readings:
         return JSONResponse(status_code=503, content={"error": "No DustBoy observations are available for this location."})
 
     env_df = pd.DataFrame(readings)
-    env_df['date'] = pd.to_datetime(env_df['date'])
+    # DustBoy history uses minute precision; current station values include seconds.
+    env_df['date'] = pd.to_datetime(env_df['date'], format='mixed')
     
     # Filter by hierarchy
     env_loc = env_df[env_df['province'] == province].copy()
@@ -306,7 +308,7 @@ def get_dashboard_data(
             "pm25": [int(x) if pd.notna(x) else None for x in pm25_data],
             "temperature": [round(x, 1) if pd.notna(x) else None for x in temp_data],
             "stations": station_status,
-            "source": "cache" if station_cache or history_cache else "live",
+            "source": "cache" if station_cache else "live",
             "fetched_at": fetched_at,
             "latest_observation": env_loc['date'].max().isoformat() if not env_loc.empty else None
         },
