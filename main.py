@@ -5,6 +5,10 @@ from typing import Optional
 import pandas as pd
 import os
 import uvicorn
+from dotenv import load_dotenv
+
+load_dotenv()
+from dustboy import observations, stations
 
 app = FastAPI(title="CMU Learning Health System API")
 
@@ -38,45 +42,18 @@ def serve_frontend_file(filename: str):
         return JSONResponse(status_code=404, content={"error": "Not found"})
     return FileResponse(filename)
 
-FRONTEND_FILES = {
-    "main.html",
-    "clinical-outreach.html",
-    "clinical-parameter-assessment.html",
-    "student-information.html",
-    "wildfire-information.html",
-    "styles.css",
-    "dashboard.js",
-}
-
-@app.get("/{filename}", include_in_schema=False)
-def serve_frontend_file(filename: str):
-    if filename not in FRONTEND_FILES:
-        return JSONResponse(status_code=404, content={"error": "Not found"})
-    return FileResponse(filename)
-
 @app.get("/api/locations")
 def get_locations():
-    """
-    Reads the environmental data and returns the exact location hierarchy
-    present in the CSV file for dynamic dropdown population.
-    """
-    if not os.path.exists("environmental.csv"):
-         return JSONResponse(
-            status_code=404, 
-            content={"error": "Data file missing. Please run generate_mock_data.py first."}
-        )
-    
-    # Only read the location columns to save memory
-    df = pd.read_csv("environmental.csv", usecols=["province", "amphoe", "tambon"])
-    
+    """Return the location hierarchy supplied by the current DustBoy stations."""
+    try:
+        station_list, _, _ = stations()
+    except RuntimeError as error:
+        return JSONResponse(status_code=503, content={"error": str(error)})
     hierarchy = {}
-    for prov in df['province'].dropna().unique():
-        hierarchy[prov] = {}
-        prov_df = df[df['province'] == prov]
-        for amphoe in prov_df['amphoe'].dropna().unique():
-            tambons = prov_df[prov_df['amphoe'] == amphoe]['tambon'].dropna().unique().tolist()
-            hierarchy[prov][amphoe] = tambons
-            
+    for station in station_list:
+        tambons = hierarchy.setdefault(station["province"], {}).setdefault(station["amphoe"], [])
+        if station["tambon"] not in tambons:
+            tambons.append(station["tambon"])
     return hierarchy
 
 @app.get("/api/data")
@@ -105,16 +82,26 @@ def get_dashboard_data(
     chk_diuretic: bool = True
 ):
     """
-    Reads the CSV files, merges environmental and patient data,
+    Reads current DustBoy observations and patient data,
     and returns calculated cohorts and charting data based on dates.
     """
-    if not os.path.exists("environmental.csv") or not os.path.exists("patients.csv"):
+    if not os.path.exists("patients.csv"):
         return JSONResponse(
             status_code=404, 
-            content={"error": "Data files missing. Please run generate_mock_data.py first."}
+            content={"error": "Patient data file missing."}
         )
+    try:
+        station_list, station_cache, fetched_at = stations()
+        selected = [s for s in station_list if s["province"] == province
+                    and (amphoe == "All Amphoe" or s["amphoe"] == amphoe)
+                    and (tambon == "All Tambon" or s["tambon"] == tambon)]
+        readings, history_cache = observations(selected)
+    except RuntimeError as error:
+        return JSONResponse(status_code=503, content={"error": str(error)})
+    if not readings:
+        return JSONResponse(status_code=503, content={"error": "No DustBoy observations are available for this location."})
 
-    env_df = pd.read_csv("environmental.csv")
+    env_df = pd.DataFrame(readings)
     env_df['date'] = pd.to_datetime(env_df['date'])
     
     # Filter by hierarchy
@@ -139,12 +126,13 @@ def get_dashboard_data(
         # Filter data to only include this latest date
         latest_data = env_loc[env_loc['date'].dt.date == latest_date]
         
-        # Get the maximum peak values for each station on that specific date
+        # Show each station's most recent reading in the selected period.
         for name, group in latest_data.groupby('local_name'):
+            latest = group.sort_values('date').iloc[-1]
             station_status.append({
                 "name": str(name),
-                "pm25": int(group['pm25_avg'].max()),
-                "temp": round(group['temperature_avg'].max(), 1)
+                "pm25": int(latest['pm25_avg']),
+                "temp": round(latest['temperature_avg'], 1) if pd.notna(latest['temperature_avg']) else None
             })
 
     env_loc = env_loc.groupby('date').agg({
@@ -177,9 +165,9 @@ def get_dashboard_data(
     pm25_data = recent_env['pm25_avg'].tolist()
     temp_data = recent_env['temperature_avg'].tolist()
     
-    # Determine current risk thresholds based on the most recent day (or max of period)
-    max_pm25 = max(pm25_data) if pm25_data else 0
-    max_temp = max(temp_data) if temp_data else 0
+    # Cohort risk follows the latest reading from each station on the final day.
+    max_pm25 = max((station['pm25'] for station in station_status), default=0)
+    max_temp = max((station['temp'] for station in station_status if station['temp'] is not None), default=0)
     
     air_hazard_active = max_pm25 >= 150
     temp_hazard_active = max_temp >= 38.0
@@ -315,9 +303,12 @@ def get_dashboard_data(
     return {
         "environment": {
             "labels": labels,
-            "pm25": [int(x) for x in pm25_data],
-            "temperature": [round(x, 1) for x in temp_data],
-            "stations": station_status
+            "pm25": [int(x) if pd.notna(x) else None for x in pm25_data],
+            "temperature": [round(x, 1) if pd.notna(x) else None for x in temp_data],
+            "stations": station_status,
+            "source": "cache" if station_cache or history_cache else "live",
+            "fetched_at": fetched_at,
+            "latest_observation": env_loc['date'].max().isoformat() if not env_loc.empty else None
         },
         "cohorts": {
             "air_risk_count": admin_air_count,

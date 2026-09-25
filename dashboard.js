@@ -161,12 +161,13 @@
                 return getMockHierarchy();
             }
             try {
-                const response = await fetch('/api/locations');
+                const response = await fetch('/api/locations', { cache: 'no-store' });
                 if (!response.ok) throw new Error("Failed to fetch locations");
                 return await response.json();
             } catch (error) {
-                console.warn("Failed to load locations from API, using fallback", error);
-                return getMockHierarchy();
+                console.warn("Failed to load locations from API", error);
+                setEnvironmentStatus('DustBoy locations are unavailable. No saved station list exists yet.');
+                return {};
             }
         }
 
@@ -174,6 +175,7 @@
             locationHierarchy = await fetchLocationHierarchy();
             const provSelect = document.getElementById('province-select');
             if (!provSelect) return;
+            if (!Object.keys(locationHierarchy).length) return;
             
             // Populate Provinces
             provSelect.innerHTML = '';
@@ -192,6 +194,7 @@
             
             const selectedProv = provSelect.value;
             const amphoes = locationHierarchy[selectedProv];
+            if (!amphoes) return;
 
             if (trigger === 'province') {
                 // Province changed, update Amphoes
@@ -538,6 +541,20 @@
             if (element) element.innerText = value;
         }
 
+        function setEnvironmentStatus(message, isCached = false) {
+            const element = document.getElementById('environment-source');
+            if (element) {
+                element.textContent = message;
+                element.className = `mt-3 text-xs ${isCached ? 'text-amber-700' : 'text-gray-600'}`;
+            }
+        }
+
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
         function updateDashboardUI(data) {
             if (envChart) {
             // 1. Update Chart Data
@@ -595,7 +612,7 @@
                     grid.innerHTML += `
                         <div class="relative rounded-xl border ${borderClass} p-4 shadow-sm transition-all duration-200 hover:shadow-md bg-white">
                             ${statusBadge}
-                            <div class="font-bold text-gray-900 text-sm mb-3 truncate" title="${station.name}">${station.name}</div>
+                            <div class="font-bold text-gray-900 text-sm mb-3 truncate" title="${escapeHTML(station.name)}">${escapeHTML(station.name)}</div>
                             
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
@@ -610,7 +627,7 @@
                                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                         Temp
                                     </div>
-                                    <span class="font-bold text-sm ${isTempHazard ? 'text-orange-600' : 'text-gray-900'}">${station.temp}°</span>
+                                    <span class="font-bold text-sm ${isTempHazard ? 'text-orange-600' : 'text-gray-900'}">${station.temp == null ? 'N/A' : `${station.temp}°`}</span>
                                 </div>
                             </div>
                         </div>
@@ -798,12 +815,14 @@
             updateDashboardUI(mockData);
         }
 
+        const bangkokToday = (offset) => new Date(Date.now() + (7 * 60 - offset * 24 * 60) * 60000).toISOString().slice(0, 10);
+
         async function fetchDashboardData() {
-            const prov = document.getElementById('province-select')?.value || 'Chiang Mai';
+            const prov = document.getElementById('province-select')?.value || 'เชียงใหม่';
             const amphoe = document.getElementById('amphoe-select')?.value || 'All Amphoe';
             const tambon = document.getElementById('location-select')?.value || 'All Tambon';
-            const startDate = document.getElementById('start-date')?.value || '2026-04-10';
-            const endDate = document.getElementById('end-date')?.value || '2026-05-10';
+            const startDate = document.getElementById('start-date')?.value || bangkokToday(6);
+            const endDate = document.getElementById('end-date')?.value || bangkokToday(0);
             
             // Get checkbox states
             const chk_child_5 = document.getElementById('chk-child-5')?.checked ?? true;
@@ -842,30 +861,42 @@
                     chk_fever, chk_kidney, chk_neuro, chk_beta_blocker, chk_antihistamine, chk_diuretic
                 });
 
-                const response = await fetch(`/api/data?${params.toString()}`);
+                setEnvironmentStatus('Refreshing DustBoy readings…');
+                const response = await fetch(`/api/data?${params.toString()}`, { cache: 'no-store' });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const details = await response.json().catch(() => ({}));
+                    throw new Error(details.error || `HTTP error: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 
                 if (data.error) {
-                    console.warn("Backend returned error:", data.error);
-                    loadMockFallback(prov, amphoe, tambon);
-                    return;
+                    throw new Error(data.error);
                 }
 
                 updateDashboardUI(data);
+                const observation = data.environment.latest_observation;
+                const asOf = observation ? ` Latest observation: ${observation.replace('T', ' ')} (Thailand time).` : '';
+                setEnvironmentStatus(data.environment.source === 'cache'
+                    ? `Showing the last saved DustBoy readings because some API requests failed.${asOf}`
+                    : `Live DustBoy readings.${asOf}`, data.environment.source === 'cache');
 
             } catch (error) {
-                // Handle fallback with the new mode
-                loadMockFallback(prov, amphoe, tambon, currentMode);
+                setEnvironmentStatus(`Readings unavailable: ${error.message}`);
             }
         }
 
         // Initialize dashboard data on load
         window.addEventListener('DOMContentLoaded', () => {
+            const startInput = document.getElementById('start-date');
+            const endInput = document.getElementById('end-date');
+            if (startInput && endInput) {
+                startInput.min = endInput.min = bangkokToday(29);
+                startInput.max = endInput.max = bangkokToday(0);
+                startInput.value = bangkokToday(6);
+                endInput.value = bangkokToday(0);
+            }
             refreshPresetDropdown();
             renderActiveFilters();
             if (document.getElementById('roleSelector')) {

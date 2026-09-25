@@ -85,9 +85,9 @@
 
                     <!-- Date Range -->
                     <div class="date-picker flex items-center space-x-2 bg-gray-50 border border-gray-300 rounded-lg p-1.5 px-3 shadow-sm">
-                        <input type="date" id="start-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-04-10">
+                        <input type="date" id="start-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer">
                         <span class="text-gray-400">-</span>
-                        <input type="date" id="end-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer" value="2026-05-10">
+                        <input type="date" id="end-date" onchange="fetchDashboardData()" class="bg-transparent text-sm text-gray-700 outline-none cursor-pointer">
                     </div>
 
                     <!-- Trend Buttons -->
@@ -101,6 +101,8 @@
                     </div>
                 </div>
             </div>
+
+            <p id="environment-source" role="status" class="mt-3 text-xs text-gray-600">Loading current DustBoy readings…</p>
 
             <!-- Chart Container -->
             <div class="relative w-full h-[350px]">
