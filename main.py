@@ -18,9 +18,11 @@ app.add_middleware(
 
 @app.get("/")
 def serve_frontend():
-    return FileResponse("main.html")
+    return FileResponse("landing.html")
 
 FRONTEND_FILES = {
+    "landing.html",
+    "Logo Global Health Research Center.png",
     "main.html",
     "clinical-outreach.html",
     "clinical-parameter-assessment.html",

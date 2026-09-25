@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMU Learning Health System</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.25rem;
+            background: #F4F5FA; color: rgba(58, 53, 65, .87);
+            font: 400 1rem/1.5 Inter, sans-serif; letter-spacing: .15px; -webkit-font-smoothing: antialiased;
+        }
+        .card {
+            width: 100%; max-width: 28rem; padding: 3rem 2.25rem 1.75rem; background: #FFF;
+            border-radius: 6px; box-shadow: 0 2px 10px 0 rgba(58, 53, 65, .1);
+        }
+        .brand { margin: 0 0 2rem; text-align: center; }
+        .brand img { width: 8rem; height: 8rem; }
+        .brand h1 { margin: 1rem 0 .5rem; font-size: 1.5rem; font-weight: 600; text-transform: capitalize; line-height: 1.2; }
+        .brand .subheading { margin: 0; font-size: .875rem; font-weight: 500; line-height: 1.4; }
+        .btn {
+            display: block; width: 100%; padding: .75rem 1.375rem; border-radius: 5px; border: 1px solid #9155FD;
+            font-size: .9375rem; font-weight: 500; letter-spacing: .46px; text-transform: capitalize; text-align: center; text-decoration: none;
+            transition: background-color .25s, box-shadow .25s;
+        }
+        .btn + .btn { margin-top: 1rem; }
+        .btn-primary { background: #9155FD; color: #FFF; box-shadow: 0 4px 8px -4px rgba(58, 53, 65, .42); }
+        .btn-primary:hover { background: #804BDF; }
+        .btn-green { background: #56CA00; border-color: #56CA00; color: #FFF; box-shadow: 0 4px 8px -4px rgba(58, 53, 65, .42); }
+        .btn-green:hover { background: #4CB200; }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <header class="brand">
+            <img src="Logo%20Global%20Health%20Research%20Center.png" alt="Global Health Research Center logo">
+            <h1>Precision Public Health</h1>
+            <p class="subheading">Global Health Research Center<br>Faculty of Medicine, Chiang Mai University</p>
+        </header>
+        <a class="btn btn-primary" href="https://uat-apl.moph.go.th/">Learning Health System</a>
+        <a class="btn btn-green" href="main.html">Climate Dashboard</a>
+    </main>
+</body>
+</html>
